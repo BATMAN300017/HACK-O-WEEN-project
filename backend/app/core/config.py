@@ -13,8 +13,15 @@ class Settings(BaseModel):
     PORT: int = int(os.getenv("PORT", "8000"))
     HOST: str = os.getenv("HOST", "0.0.0.0")
     
-    # Database URL: default SQLite with path resolution, or PostgreSQL
+    # Database URL: default SQLite with path resolution, or Supabase PostgreSQL
     DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./sentinelflow.db")
+    
+    # Supabase Integration (Database, Auth, Storage, Email)
+    SUPABASE_URL: str = os.getenv("SUPABASE_URL", "")
+    SUPABASE_ANON_KEY: str = os.getenv("SUPABASE_ANON_KEY", "")
+    SUPABASE_SERVICE_ROLE_KEY: str = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
+    SUPABASE_JWT_SECRET: str = os.getenv("SUPABASE_JWT_SECRET", "")
+    SUPABASE_STORAGE_BUCKET: str = os.getenv("SUPABASE_STORAGE_BUCKET", "evidence-files")
     
     # Security & Auth
     SECRET_KEY: str = os.getenv("SECRET_KEY", "sentinelflow_super_secret_demo_key_9874123")

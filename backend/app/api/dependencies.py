@@ -31,6 +31,11 @@ def get_current_user(
         
     payload = decode_access_token(token)
     if not payload:
+        # Check if valid Supabase Auth JWT token
+        from app.services.supabase_service import supabase_client
+        supabase_user = supabase_client.verify_token(token)
+        if supabase_user:
+            return supabase_user
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired or invalid signature")
         
     cursor = db.cursor()
