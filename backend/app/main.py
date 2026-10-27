@@ -51,4 +51,19 @@ if os.path.exists(static_dir):
 def on_startup():
     logger.info("SentinelFlow AI starting up...")
     init_db()
+    # Auto-seed initial demo records if database is fresh
+    try:
+        from app.core.database import get_db_connection
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT COUNT(*) FROM transactions")
+            count = cursor.fetchone()[0]
+            if count == 0:
+                logger.info("Fresh database detected. Auto-seeding initial demo records...")
+                from scripts.seed_demo_data import seed_demo_database
+                seed_demo_database()
+            else:
+                logger.info(f"Database contains {count} transactions. Ready.")
+    except Exception as e:
+        logger.warning(f"Startup database check: {e}")
     logger.info("Database and services initialized successfully.")
