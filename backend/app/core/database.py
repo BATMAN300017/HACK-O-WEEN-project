@@ -407,5 +407,17 @@ def init_db():
     logger.info("Initializing SentinelFlow database schema...")
     with get_db_connection() as conn:
         conn.executescript(SCHEMA_SQL)
+        cursor = conn.cursor()
+        # Ensure system users exist for copilot and automated agents
+        cursor.execute("SELECT id FROM users WHERE id = 'SYSTEM_COPILOT'")
+        if not cursor.fetchone():
+            now = "2026-01-01T00:00:00Z"
+            cursor.execute("""
+                INSERT OR IGNORE INTO users (id, username, email, full_name, role, hashed_password, is_active, created_at)
+                VALUES 
+                ('SYSTEM_COPILOT', 'system_copilot', 'copilot@sentinelflow.bank', 'SentinelFlow AI Copilot', 'investigator', 'pbkdf2_sha256$29000$demo', 1, ?),
+                ('USR-SYS-01', 'system_agent', 'agent@sentinelflow.bank', 'Automated Triage Agent', 'investigator', 'pbkdf2_sha256$29000$demo', 1, ?),
+                ('USR-INV-01', 'sarah_investigator', 'sarah.lin@sentinelflow.bank', 'Sarah Lin', 'investigator', 'pbkdf2_sha256$29000$demo', 1, ?)
+            """, (now, now, now))
         conn.commit()
     logger.info("Database schema initialized successfully.")

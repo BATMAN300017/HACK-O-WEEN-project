@@ -61,10 +61,22 @@ def post_dismiss_alert(
 ):
     return dismiss_alert(db, alert_id, req.reason, current_user.get("full_name", "Investigator"))
 
+from app.services.route_map_service import get_scam_and_route_dossier
+
+@router.get("/{alert_id}/scam-dossier")
+def get_alert_scam_dossier(alert_id: str, db: sqlite3.Connection = Depends(get_db)):
+    dossier = get_scam_and_route_dossier(db, alert_id=alert_id)
+    if "error" in dossier:
+        raise HTTPException(status_code=404, detail=dossier["error"])
+    return dossier
+
 @router.post("/{alert_id}/investigate")
 def post_convert_investigation(
     alert_id: str,
     current_user: dict = Depends(require_permission(Permission.CREATE_INVESTIGATION)),
     db: sqlite3.Connection = Depends(get_db)
 ):
-    return convert_alert_to_investigation(db, alert_id, current_user.get("full_name", "Investigator"))
+    res = convert_alert_to_investigation(db, alert_id, current_user.get("full_name", "Investigator"))
+    # Attach rich scam dossier and interactive transaction route map
+    dossier = get_scam_and_route_dossier(db, investigation_id=res.get("investigation_id"), alert_id=alert_id)
+    return {**res, "scam_dossier": dossier}

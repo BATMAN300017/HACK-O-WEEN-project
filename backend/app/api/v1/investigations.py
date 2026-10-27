@@ -53,12 +53,30 @@ def post_create_investigation(
     })
     return inv
 
+from app.services.route_map_service import get_scam_and_route_dossier
+
 @router.get("/{investigation_id}")
 def get_investigation(investigation_id: str, db: sqlite3.Connection = Depends(get_db)):
     inv = get_investigation_by_id(db, investigation_id)
     if not inv:
         raise HTTPException(status_code=404, detail=f"Investigation {investigation_id} not found")
+    dossier = get_scam_and_route_dossier(db, investigation_id=investigation_id)
+    inv["scam_dossier"] = dossier
     return inv
+
+@router.get("/{investigation_id}/scam-dossier")
+def get_investigation_scam_dossier(investigation_id: str, db: sqlite3.Connection = Depends(get_db)):
+    dossier = get_scam_and_route_dossier(db, investigation_id=investigation_id)
+    if "error" in dossier:
+        raise HTTPException(status_code=404, detail=dossier["error"])
+    return dossier
+
+@router.get("/{investigation_id}/route-map")
+def get_investigation_route_map(investigation_id: str, db: sqlite3.Connection = Depends(get_db)):
+    dossier = get_scam_and_route_dossier(db, investigation_id=investigation_id)
+    if "error" in dossier:
+        raise HTTPException(status_code=404, detail=dossier["error"])
+    return dossier.get("route_map", {})
 
 @router.patch("/{investigation_id}")
 def patch_investigation(

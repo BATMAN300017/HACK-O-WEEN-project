@@ -146,12 +146,16 @@ def orchestrate_self_directed_investigation(
         """, (f"TSK-{generate_investigation_id()[-6:]}", inv_id, t_title, t_desc, now))
         
     # Step 12: Add recommended action note
+    cursor.execute("SELECT id FROM users WHERE id IN ('SYSTEM_COPILOT', 'USR-INV-01') LIMIT 1")
+    u_row = cursor.fetchone()
+    system_author = u_row[0] if u_row else "SYSTEM_COPILOT"
     cursor.execute("""
         INSERT INTO investigation_notes (id, investigation_id, author_id, content, is_confidential, created_at)
-        VALUES (?, ?, 'SYSTEM_COPILOT', ?, 0, ?)
+        VALUES (?, ?, ?, ?, 0, ?)
     """, (
         f"NOT-{generate_investigation_id()[-6:]}",
         inv_id,
+        system_author,
         f"Copilot Auto-Triage: Alert converted to investigation. Priority: {alert['severity']}. Recommended next step: Inspect outbound fund flow from destination account to determine if funds have exited the banking perimeter.",
         now
     ))

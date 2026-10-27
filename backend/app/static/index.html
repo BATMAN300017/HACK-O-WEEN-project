@@ -26,6 +26,22 @@
         .tab-btn.active { border-bottom: 2px solid #0284c7; color: #0284c7; font-weight: 600; }
         .pulse-live { animation: pulse 2s infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        
+        @keyframes flowDash {
+            to { stroke-dashoffset: -32; }
+        }
+        .route-flow-line {
+            stroke-dasharray: 8, 6;
+            animation: flowDash 1.2s linear infinite;
+        }
+        @keyframes rippleRing {
+            0% { r: 6; opacity: 0.9; stroke-width: 2.5; }
+            100% { r: 24; opacity: 0; stroke-width: 0.5; }
+        }
+        .pulse-ring {
+            animation: rippleRing 2s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+            transform-origin: center;
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
@@ -372,6 +388,10 @@
                     <!-- Workbench Tabs -->
                     <div class="flex space-x-6 border-b border-slate-200 mt-6 text-sm font-medium">
                         <button onclick="switchCaseTab('evidence')" id="tab-evidence" class="tab-btn active pb-3">Evidence Items (<span id="cnt-tab-evidence">0</span>)</button>
+                        <button onclick="switchCaseTab('route')" id="tab-route" class="tab-btn pb-3 text-emerald-600 font-semibold flex items-center space-x-1.5">
+                            <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+                            <span>Transaction Route Map</span>
+                        </button>
                         <button onclick="switchCaseTab('tasks')" id="tab-tasks" class="tab-btn pb-3">Investigative Checklist</button>
                         <button onclick="switchCaseTab('graph')" id="tab-graph" class="tab-btn pb-3">Sub-Graph Network</button>
                         <button onclick="switchCaseTab('copilot')" id="tab-copilot" class="tab-btn pb-3 text-sky-600 font-semibold flex items-center space-x-1">
@@ -389,6 +409,35 @@
                             </div>
                             <div id="case-evidence-list" class="space-y-2.5">
                                 <div class="text-center py-6 text-xs text-slate-400">Loading case evidence records...</div>
+                            </div>
+                        </div>
+
+                        <!-- Transaction Route Map Tab -->
+                        <div id="casetab-route" class="space-y-4 hidden">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-sm font-bold text-slate-900" id="case-route-scam-title">Transaction Route & Geo-Money Flow</h3>
+                                    <p class="text-xs text-slate-500 mt-0.5" id="case-route-scam-summary">End-to-end hop tracking from origination device to offshore off-ramp.</p>
+                                </div>
+                                <div class="flex items-center space-x-2 text-xs">
+                                    <span class="px-2.5 py-1 rounded bg-slate-100 font-mono text-slate-700" id="case-route-distance">-- km</span>
+                                    <span class="px-2.5 py-1 rounded bg-rose-50 text-rose-700 font-semibold" id="case-route-velocity">Multi-Hop Path</span>
+                                </div>
+                            </div>
+
+                            <!-- Map SVG Canvas -->
+                            <div class="h-80 w-full bg-slate-950 rounded-xl border border-slate-800 p-3 relative overflow-hidden flex items-center justify-center">
+                                <svg id="case-route-svg" viewBox="0 0 850 320" class="w-full h-full"></svg>
+                            </div>
+
+                            <!-- Hop Step Cards -->
+                            <div id="case-route-hops-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
+                                <!-- Dynamically populated -->
+                            </div>
+
+                            <!-- Exculpatory Guidance -->
+                            <div id="case-route-exculpatory" class="p-4 rounded-xl border border-sky-200 bg-sky-50/70 text-xs text-sky-900 space-y-1.5">
+                                <!-- Dynamically populated -->
                             </div>
                         </div>
 
@@ -594,6 +643,119 @@
         </div>
     </div>
 
+    <!-- Scam Investigation & Route Map Dossier Modal -->
+    <div id="scam-investigation-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl text-slate-100 max-w-5xl w-full p-6 space-y-5 my-8 max-h-[92vh] overflow-y-auto custom-scrollbar">
+            <!-- Modal Header -->
+            <div class="flex items-start justify-between border-b border-slate-800 pb-4">
+                <div class="space-y-1">
+                    <div class="flex items-center space-x-2.5">
+                        <span id="scam-modal-cat-badge" class="bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs px-2.5 py-0.5 rounded-full font-semibold uppercase tracking-wide">Scam Typology Detected</span>
+                        <span id="scam-modal-case-num" class="font-mono text-xs text-sky-400 bg-sky-950/80 border border-sky-800 px-2 py-0.5 rounded">CASE-2026-000</span>
+                        <span id="scam-modal-status-badge" class="text-[11px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded">NEW</span>
+                    </div>
+                    <h2 id="scam-modal-title" class="text-xl font-bold text-white tracking-tight">Authorized Push Payment (APP) / Investment Scam</h2>
+                    <p id="scam-modal-modus" class="text-xs text-slate-400 max-w-3xl leading-relaxed">Modus operandi narrative will be displayed here.</p>
+                </div>
+
+                <div class="flex items-center space-x-3">
+                    <div class="text-right">
+                        <div class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Risk Score</div>
+                        <div id="scam-modal-score" class="text-2xl font-black text-rose-400 font-mono">92.0</div>
+                    </div>
+                    <button onclick="closeScamDossierModal()" class="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Geographic & Money-Flow Route Map Container -->
+            <div class="bg-slate-950 rounded-xl border border-slate-800 p-4 space-y-3">
+                <div class="flex items-center justify-between text-xs">
+                    <div class="flex items-center space-x-2 text-slate-300 font-medium">
+                        <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+                        <span>Interactive Transaction Movement & Geo-Route Map</span>
+                    </div>
+                    <div class="flex items-center space-x-3 text-[11px] text-slate-400">
+                        <span class="flex items-center space-x-1"><span class="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block"></span><span>Origin</span></span>
+                        <span class="flex items-center space-x-1"><span class="w-2.5 h-2.5 rounded-full bg-indigo-400 inline-block"></span><span>Rail Switch</span></span>
+                        <span class="flex items-center space-x-1"><span class="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block"></span><span>Layering Mule</span></span>
+                        <span class="flex items-center space-x-1"><span class="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block"></span><span>Off-Ramp Destination</span></span>
+                    </div>
+                </div>
+
+                <div class="h-72 w-full bg-slate-950 rounded-lg relative overflow-hidden flex items-center justify-center border border-slate-900">
+                    <svg id="scam-modal-route-svg" viewBox="0 0 850 320" class="w-full h-full"></svg>
+                </div>
+
+                <!-- Route Summary Bar -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-[11px] text-slate-400">
+                    <div class="bg-slate-900/80 p-2.5 rounded border border-slate-800">
+                        <div class="text-[10px] text-slate-500 uppercase">Total Geodesic Span</div>
+                        <div id="scam-modal-dist" class="font-mono text-slate-200 font-semibold mt-0.5">-- km</div>
+                    </div>
+                    <div class="bg-slate-900/80 p-2.5 rounded border border-slate-800">
+                        <div class="text-[10px] text-slate-500 uppercase">Payment Channel</div>
+                        <div id="scam-modal-channel" class="font-mono text-slate-200 font-semibold mt-0.5">WIRE_TRANSFER</div>
+                    </div>
+                    <div class="bg-slate-900/80 p-2.5 rounded border border-slate-800">
+                        <div class="text-[10px] text-slate-500 uppercase">Exfiltrated Sum</div>
+                        <div id="scam-modal-amount" class="font-mono text-rose-300 font-bold mt-0.5">$0.00</div>
+                    </div>
+                    <div class="bg-slate-900/80 p-2.5 rounded border border-slate-800">
+                        <div class="text-[10px] text-slate-500 uppercase">Perimeter Status</div>
+                        <div id="scam-modal-perimeter" class="font-mono text-amber-300 font-semibold mt-0.5">Cross-Border Egress</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hop Journey Grid -->
+            <div class="space-y-2">
+                <div class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Detailed Hop Trail</div>
+                <div id="scam-modal-hops-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+            <!-- Detection Findings & Exculpatory Analysis Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                <!-- Why Flagged -->
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2">
+                    <div class="font-bold text-slate-200 flex items-center space-x-1.5">
+                        <span class="text-rose-400">⚠️</span>
+                        <span>Multi-Signal Detection Triggers</span>
+                    </div>
+                    <div id="scam-modal-findings-list" class="space-y-1.5 text-slate-400 text-[11px]">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Exculpatory & Scholarship Validation -->
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2">
+                    <div class="font-bold text-slate-200 flex items-center space-x-1.5">
+                        <span class="text-sky-400">⚖️</span>
+                        <span>Legitimacy & Exculpatory Factors</span>
+                    </div>
+                    <div id="scam-modal-exculpatory-list" class="space-y-1.5 text-slate-400 text-[11px]">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Prescribed Actions & Modal Footer -->
+            <div class="border-t border-slate-800 pt-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div class="text-xs text-slate-400">
+                    Recommended immediate action: <span class="text-amber-400 font-medium" id="scam-modal-recommended-action">Contact customer out-of-band & freeze destination account.</span>
+                </div>
+                <div class="flex items-center space-x-2 w-full sm:w-auto justify-end">
+                    <button onclick="closeScamDossierModal()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium transition">Close</button>
+                    <button onclick="recordDispositionFromScamModal()" class="px-3.5 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-medium shadow-sm transition">Record Disposition</button>
+                    <button onclick="openFullWorkbenchFromScamModal()" class="px-3.5 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-medium shadow-sm transition">Open Full Dossier &rarr;</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Application Script -->
     <script>
         const API_BASE = '/api/v1';
@@ -707,15 +869,248 @@
             `).join('');
         }
 
+        let currentScamDossier = null;
+
         async function investigateAlert(alertId) {
             try {
                 const res = await fetch(`${API_BASE}/alerts/${alertId}/investigate`, { method: 'POST' });
                 const data = await res.json();
-                if (data.investigation_id) {
+                if (data.scam_dossier) {
+                    currentActiveCaseId = data.investigation_id;
+                    openScamDossierModal(data.scam_dossier);
+                    loadAlerts();
+                } else if (data.investigation_id) {
                     openCaseDetail(data.investigation_id);
+                } else {
+                    alert("Investigation could not be initialized: " + JSON.stringify(data));
                 }
             } catch (e) {
-                alert("Failed to convert alert: " + e.message);
+                alert("Failed to investigate alert: " + e.message);
+            }
+        }
+
+        function openScamDossierModal(dossier) {
+            currentScamDossier = dossier;
+            if (dossier.investigation_id) {
+                currentActiveCaseId = dossier.investigation_id;
+            }
+            
+            // Header elements
+            document.getElementById('scam-modal-cat-badge').innerText = (dossier.scam_category || 'SCAM').replace(/_/g, ' ');
+            document.getElementById('scam-modal-case-num').innerText = dossier.case_number || 'CASE-2026';
+            document.getElementById('scam-modal-status-badge').innerText = dossier.status || 'NEW';
+            document.getElementById('scam-modal-title').innerText = dossier.scam_title || 'Financial Crime Alert';
+            document.getElementById('scam-modal-modus').innerText = dossier.modus_operandi || '';
+            document.getElementById('scam-modal-score').innerText = Number(dossier.risk_score || 0).toFixed(1);
+            
+            // Metrics bar
+            const rm = dossier.route_map || {};
+            document.getElementById('scam-modal-dist').innerText = `${rm.distance_km || 0} km`;
+            document.getElementById('scam-modal-channel').innerText = dossier.transaction?.payment_channel || 'WIRE_TRANSFER';
+            document.getElementById('scam-modal-amount').innerText = '$' + Number(dossier.transaction?.amount || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
+            document.getElementById('scam-modal-perimeter').innerText = rm.destination_country !== rm.origin_country ? 'Cross-Border Offshore' : 'Domestic High-Velocity';
+
+            // SVG Route Map
+            renderTransactionRouteSvg('scam-modal-route-svg', rm);
+
+            // Hop timeline cards
+            const hops = rm.hops || [];
+            const hopsContainer = document.getElementById('scam-modal-hops-container');
+            hopsContainer.innerHTML = hops.map(h => `
+                <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 space-y-1.5 text-[11px]">
+                    <div class="flex items-center justify-between">
+                        <span class="font-mono font-bold text-sky-400">HOP ${h.hop_index}</span>
+                        <span class="text-[9px] px-1.5 py-0.5 rounded ${h.hop_type === 'ORIGIN' ? 'bg-emerald-500/20 text-emerald-300' : h.hop_type === 'TRANSIT_GATEWAY' ? 'bg-indigo-500/20 text-indigo-300' : h.hop_type === 'INTERMEDIARY_MULE' ? 'bg-amber-500/20 text-amber-300' : 'bg-rose-500/20 text-rose-300'}">${h.hop_type}</span>
+                    </div>
+                    <div class="font-bold text-slate-200 truncate" title="${h.entity_name}">${h.title}</div>
+                    <div class="text-slate-400 font-semibold">${h.city}, ${h.country}</div>
+                    <div class="text-slate-400 font-mono text-[10px]">ID: ${h.entity_id}</div>
+                    <div class="text-slate-500 text-[10px]">${h.notes || ''}</div>
+                    <div class="pt-1 border-t border-slate-800/80 flex items-center justify-between font-mono text-[10px]">
+                        <span class="text-slate-400">IP: ${h.ip_address || 'Switch'}</span>
+                        <span class="text-emerald-400 font-bold">${h.amount ? '$' + Number(h.amount).toLocaleString() : ''}</span>
+                    </div>
+                </div>
+            `).join('');
+
+            // Multi-signal findings
+            const findingsContainer = document.getElementById('scam-modal-findings-list');
+            const findings = dossier.findings || [];
+            if (findings.length === 0) {
+                findingsContainer.innerHTML = `
+                    <div class="p-2 rounded bg-slate-900 border border-slate-800">
+                        <span class="text-rose-400 font-bold">• High-Velocity Outlier:</span> Amount deviates >8x from historical baseline.
+                    </div>
+                    <div class="p-2 rounded bg-slate-900 border border-slate-800">
+                        <span class="text-amber-400 font-bold">• Cross-Border Destination:</span> Funds routed to offshore entity.
+                    </div>
+                `;
+            } else {
+                findingsContainer.innerHTML = findings.map(f => `
+                    <div class="p-2 rounded bg-slate-900 border border-slate-800">
+                        <span class="text-rose-400 font-bold">• [${f.source}] ${f.code}:</span> ${f.description} (Risk +${f.score_contribution})
+                    </div>
+                `).join('');
+            }
+
+            // Exculpatory & Scholarship Validation
+            const exContainer = document.getElementById('scam-modal-exculpatory-list');
+            const ex = dossier.exculpatory_analysis || {};
+            const supports = (ex.supports_fraud || []).map(s => `<li class="text-slate-300"><span class="text-rose-400 font-bold">✖ Supports Suspicion:</span> ${s}</li>`).join('');
+            const contradicts = (ex.contradicts_fraud || []).map(c => `<li class="text-slate-300"><span class="text-emerald-400 font-bold">✔ Contradictory Factor:</span> ${c}</li>`).join('');
+            const scholar = ex.scholarship_or_institution_check ? `
+                <div class="p-2 rounded bg-sky-950/60 border border-sky-800 text-sky-200 text-[10px] mt-2">
+                    <b>🎓 Institutional / Scholarship Verification:</b> ${ex.scholarship_or_institution_check.guidance}
+                </div>
+            ` : '';
+            exContainer.innerHTML = `<ul class="space-y-1">${supports}${contradicts}</ul>${scholar}`;
+
+            // Recommended Action
+            if (dossier.recommended_actions && dossier.recommended_actions.length > 0) {
+                document.getElementById('scam-modal-recommended-action').innerText = dossier.recommended_actions[0].action;
+            }
+
+            document.getElementById('scam-investigation-modal').classList.remove('hidden');
+        }
+
+        function closeScamDossierModal() {
+            document.getElementById('scam-investigation-modal').classList.add('hidden');
+        }
+
+        function recordDispositionFromScamModal() {
+            closeScamDossierModal();
+            openDispositionModal();
+        }
+
+        function openFullWorkbenchFromScamModal() {
+            closeScamDossierModal();
+            if (currentActiveCaseId) {
+                openCaseDetail(currentActiveCaseId);
+            }
+        }
+
+        function renderTransactionRouteSvg(svgId, routeMap) {
+            const svg = document.getElementById(svgId);
+            if (!svg || !routeMap || !routeMap.hops || routeMap.hops.length === 0) return;
+            
+            const hops = routeMap.hops;
+            const width = 850;
+            const height = 320;
+            const paddingX = 95;
+            const paddingY = 60;
+            
+            const sortedHops = [...hops].sort((a, b) => a.hop_index - b.hop_index);
+            
+            const points = sortedHops.map((h, i) => {
+                const step = (width - 2 * paddingX) / (sortedHops.length - 1 || 1);
+                const x = paddingX + i * step;
+                const y = paddingY + (height - 2 * paddingY) * (i % 2 === 0 ? 0.35 : 0.65);
+                return { ...h, x, y };
+            });
+            
+            function getHopColor(role) {
+                if (role === 'ORIGIN') return '#10B981';
+                if (role === 'TRANSIT_GATEWAY') return '#6366F1';
+                if (role === 'INTERMEDIARY_MULE') return '#F59E0B';
+                return '#EF4444';
+            }
+            
+            let html = `
+                <defs>
+                    <linearGradient id="routeGrad-${svgId}" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stop-color="#10B981" stop-opacity="0.9"/>
+                        <stop offset="35%" stop-color="#6366F1" stop-opacity="0.9"/>
+                        <stop offset="70%" stop-color="#F59E0B" stop-opacity="0.9"/>
+                        <stop offset="100%" stop-color="#EF4444" stop-opacity="0.9"/>
+                    </linearGradient>
+                    <filter id="glow-${svgId}" x="-20%" y="-20%" width="140%" height="140%">
+                        <feGaussianBlur stdDeviation="3.5" result="blur" />
+                        <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                    </filter>
+                </defs>
+                
+                <rect width="100%" height="100%" fill="#050814" rx="10"/>
+                <g stroke="#1E293B" stroke-width="0.75" stroke-dasharray="3,3">
+                    <line x1="0" y1="80" x2="${width}" y2="80"/>
+                    <line x1="0" y1="160" x2="${width}" y2="160"/>
+                    <line x1="0" y1="240" x2="${width}" y2="240"/>
+                    <line x1="212" y1="0" x2="212" y2="${height}"/>
+                    <line x1="425" y1="0" x2="425" y2="${height}"/>
+                    <line x1="637" y1="0" x2="637" y2="${height}"/>
+                </g>
+            `;
+            
+            for (let i = 0; i < points.length - 1; i++) {
+                const p1 = points[i];
+                const p2 = points[i + 1];
+                const cx = (p1.x + p2.x) / 2;
+                const cy = Math.min(p1.y, p2.y) - 38;
+                
+                html += `<path d="M ${p1.x} ${p1.y} Q ${cx} ${cy} ${p2.x} ${p2.y}" fill="none" stroke="#334155" stroke-width="2.5" />`;
+                html += `<path d="M ${p1.x} ${p1.y} Q ${cx} ${cy} ${p2.x} ${p2.y}" fill="none" stroke="url(#routeGrad-${svgId})" stroke-width="3" filter="url(#glow-${svgId})" class="route-flow-line" />`;
+            }
+            
+            points.forEach((p, idx) => {
+                const color = getHopColor(p.hop_type);
+                
+                html += `<circle cx="${p.x}" cy="${p.y}" r="14" fill="${color}" fill-opacity="0.25" class="pulse-ring" stroke="${color}" stroke-opacity="0.5"/>`;
+                html += `<circle cx="${p.x}" cy="${p.y}" r="8.5" fill="#0B132B" stroke="${color}" stroke-width="3.5" filter="url(#glow-${svgId})" />`;
+                html += `<circle cx="${p.x}" cy="${p.y}" r="3.5" fill="${color}" />`;
+                
+                html += `
+                    <rect x="${p.x - 28}" y="${p.y - 48}" width="56" height="20" rx="4" fill="#0F172A" stroke="${color}" stroke-width="1.2"/>
+                    <text x="${p.x}" y="${p.y - 34}" fill="#E2E8F0" font-size="10" font-family="monospace" font-weight="bold" text-anchor="middle">HOP ${p.hop_index}</text>
+                `;
+                
+                const labelY = p.y + 22;
+                html += `
+                    <text x="${p.x}" y="${labelY}" fill="#F8FAFC" font-size="12" font-weight="bold" text-anchor="middle">${p.city}</text>
+                    <text x="${p.x}" y="${labelY + 14}" fill="#94A3B8" font-size="10" text-anchor="middle">${p.country}</text>
+                    <text x="${p.x}" y="${labelY + 28}" fill="${color}" font-size="10" font-family="monospace" font-weight="600" text-anchor="middle">${p.amount ? '$' + Number(p.amount).toLocaleString() : ''}</text>
+                    <text x="${p.x}" y="${labelY + 40}" fill="#64748B" font-size="9" text-anchor="middle">${p.ip_address || ''}</text>
+                `;
+            });
+            
+            svg.innerHTML = html;
+        }
+
+        function renderCaseRouteTab(dossier) {
+            if (!dossier || !dossier.route_map) return;
+            const rm = dossier.route_map;
+            document.getElementById('case-route-scam-title').innerText = `${dossier.scam_title || 'Scam Intelligence'} — Route Analysis`;
+            document.getElementById('case-route-scam-summary').innerText = dossier.modus_operandi || '';
+            document.getElementById('case-route-distance').innerText = `${rm.distance_km || 0} km span`;
+            document.getElementById('case-route-velocity').innerText = `${rm.total_hops || 4} Hops Tracked`;
+
+            renderTransactionRouteSvg('case-route-svg', rm);
+
+            const grid = document.getElementById('case-route-hops-grid');
+            grid.innerHTML = (rm.hops || []).map(h => `
+                <div class="p-3 bg-white border border-slate-200 rounded-lg shadow-sm space-y-1 text-xs">
+                    <div class="flex items-center justify-between">
+                        <span class="font-mono font-bold text-sky-700">HOP ${h.hop_index}</span>
+                        <span class="text-[10px] font-semibold text-slate-500">${h.hop_type}</span>
+                    </div>
+                    <div class="font-bold text-slate-900 truncate">${h.title}</div>
+                    <div class="text-slate-600 font-medium">${h.city}, ${h.country}</div>
+                    <div class="text-[11px] text-slate-400 font-mono">Entity: ${h.entity_id}</div>
+                    <div class="text-[11px] text-slate-500 pt-1">${h.notes || ''}</div>
+                    <div class="pt-1 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                        <span class="font-mono text-slate-400">IP: ${h.ip_address || 'Switch'}</span>
+                        <span class="font-bold text-emerald-600">${h.amount ? '$' + Number(h.amount).toLocaleString() : ''}</span>
+                    </div>
+                </div>
+            `).join('');
+
+            const ex = dossier.exculpatory_analysis;
+            if (ex && ex.scholarship_or_institution_check) {
+                document.getElementById('case-route-exculpatory').innerHTML = `
+                    <div class="font-bold text-sky-950 flex items-center space-x-1.5">
+                        <span>🎓 Domain Whitelist & Exculpatory Protocol</span>
+                    </div>
+                    <div>${ex.scholarship_or_institution_check.guidance}</div>
+                    <div class="text-[11px] text-sky-700 mt-1">Remember: Never confuse anomaly with fraud. Legitimate scholarship, grant, or payroll spikes must not be flagged as unauthorized push payments once counterparty registrar verification passes.</div>
+                `;
             }
         }
 
@@ -745,6 +1140,7 @@
 
         async function openCaseDetail(caseId) {
             currentActiveCaseId = caseId;
+            closeScamDossierModal();
             switchView('case-detail');
             const res = await fetch(`${API_BASE}/investigations/${caseId}`);
             const data = await res.json();
@@ -760,15 +1156,22 @@
             loadCaseEvidence(caseId);
             loadCaseTasks(caseId);
             loadCaseGraph(caseId);
+            if (data.scam_dossier) {
+                renderCaseRouteTab(data.scam_dossier);
+            }
         }
 
         function switchCaseTab(tabId) {
-            ['evidence', 'tasks', 'graph', 'copilot'].forEach(t => {
-                document.getElementById('casetab-' + t).classList.add('hidden');
-                document.getElementById('tab-' + t).classList.remove('active');
+            ['evidence', 'route', 'tasks', 'graph', 'copilot'].forEach(t => {
+                const el = document.getElementById('casetab-' + t);
+                const btn = document.getElementById('tab-' + t);
+                if (el) el.classList.add('hidden');
+                if (btn) btn.classList.remove('active');
             });
-            document.getElementById('casetab-' + tabId).classList.remove('hidden');
-            document.getElementById('tab-' + tabId).classList.add('active');
+            const activeEl = document.getElementById('casetab-' + tabId);
+            const activeBtn = document.getElementById('tab-' + tabId);
+            if (activeEl) activeEl.classList.remove('hidden');
+            if (activeBtn) activeBtn.classList.add('active');
         }
 
         async function loadCaseEvidence(caseId) {
