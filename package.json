@@ -1,0 +1,16 @@
+{
+  "name": "sentinelflow-ai-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SentinelFlow AI — The Self-Directed Fraud Investigation Platform",
+  "scripts": {
+    "dev:frontend": "pnpm --filter frontend dev",
+    "build:frontend": "pnpm --filter frontend build",
+    "lint": "pnpm --filter frontend lint",
+    "test": "pnpm --filter frontend test"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "prettier": "^3.2.5"
+  }
+}

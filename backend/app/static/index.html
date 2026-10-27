@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SentinelFlow AI — The Self-Directed Fraud Investigation Platform</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230284c7' stroke-width='2'><path d='M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'/></svg>">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        navy: { 900: '#0B132B', 800: '#1C2541', 700: '#3A506B' },
+                        brand: { 500: '#0284c7', 600: '#0369a1' },
+                        risk: { high: '#ef4444', elevated: '#f59e0b', low: '#3b82f6', routine: '#10b981' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .tab-btn.active { border-bottom: 2px solid #0284c7; color: #0284c7; font-weight: 600; }
+        .pulse-live { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
+
+    <!-- Top Navigation Bar -->
+    <header class="bg-navy-900 text-white border-b border-navy-700 px-6 py-3 flex items-center justify-between sticky top-0 z-50 shadow-md">
+        <div class="flex items-center space-x-4">
+            <div class="flex items-center space-x-2">
+                <svg class="w-7 h-7 text-sky-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    <path d="m9 12 2 2 4-4"/>
+                </svg>
+                <span class="font-bold text-lg tracking-tight text-white">SentinelFlow <span class="text-sky-400">AI</span></span>
+            </div>
+            <span class="bg-navy-800 text-sky-300 text-xs px-2.5 py-0.5 rounded-full border border-sky-500/30 font-medium">Self-Directed Fraud Platform</span>
+            <div class="flex items-center space-x-1 ml-4 pl-4 border-l border-navy-700 text-xs text-slate-300">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 pulse-live mr-1.5" id="sim-indicator"></span>
+                <span id="sim-status-text">Engine Online</span>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-4">
+            <!-- Named Scenario Quick Launch -->
+            <div class="flex items-center space-x-2 bg-navy-800 p-1.5 rounded-lg border border-navy-700 text-xs">
+                <span class="text-slate-400 pl-1 font-medium">Scenario:</span>
+                <button onclick="triggerScenario('rapid_movement')" class="bg-sky-600 hover:bg-sky-500 text-white px-2.5 py-1 rounded transition font-medium">Rapid Flow</button>
+                <button onclick="triggerScenario('connected_network')" class="bg-amber-600 hover:bg-amber-500 text-white px-2.5 py-1 rounded transition font-medium">Mule Network</button>
+                <button onclick="triggerScenario('legitimate_unusual')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1 rounded transition font-medium">Benign Burst</button>
+            </div>
+
+            <!-- User identity -->
+            <div class="flex items-center space-x-2 bg-navy-800/80 px-3 py-1.5 rounded-lg border border-navy-700 text-xs">
+                <div class="w-6 h-6 rounded-full bg-sky-500 flex items-center justify-center font-bold text-navy-900">SL</div>
+                <div>
+                    <div class="font-medium text-slate-200" id="user-display-name">Sarah Lin</div>
+                    <div class="text-[10px] text-sky-400 font-mono" id="user-display-role">INVESTIGATOR</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- App Shell Layout -->
+    <div class="flex-1 flex overflow-hidden">
+        
+        <!-- Sidebar Navigation -->
+        <aside class="w-64 bg-navy-900 text-slate-300 border-r border-navy-800 flex flex-col justify-between py-4 select-none shrink-0">
+            <nav class="space-y-1 px-3">
+                <button onclick="switchView('overview')" id="nav-overview" class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-navy-800 hover:text-white transition text-white bg-navy-800">
+                    <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+                    <span>Overview & KPIs</span>
+                </button>
+                <button onclick="switchView('transactions')" id="nav-transactions" class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-navy-800 hover:text-white transition">
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                    <span>Live Transactions</span>
+                </button>
+                <button onclick="switchView('alerts')" id="nav-alerts" class="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-navy-800 hover:text-white transition">
+                    <div class="flex items-center space-x-3">
+                        <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                        <span>Alerts Queue</span>
+                    </div>
+                    <span id="badge-alert-count" class="bg-amber-500/20 text-amber-300 text-xs px-2 py-0.5 rounded-full font-mono">0</span>
+                </button>
+                <button onclick="switchView('investigations')" id="nav-investigations" class="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-navy-800 hover:text-white transition">
+                    <div class="flex items-center space-x-3">
+                        <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+                        <span>Investigations</span>
+                    </div>
+                    <span id="badge-inv-count" class="bg-sky-500/20 text-sky-300 text-xs px-2 py-0.5 rounded-full font-mono">0</span>
+                </button>
+                <button onclick="switchView('network')" id="nav-network" class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-navy-800 hover:text-white transition">
+                    <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    <span>Network Intelligence</span>
+                </button>
+                <button onclick="switchView('learning')" id="nav-learning" class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-navy-800 hover:text-white transition">
+                    <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                    <span>Feedback & Learning</span>
+                </button>
+                <button onclick="switchView('rules')" id="nav-rules" class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-navy-800 hover:text-white transition">
+                    <svg class="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+                    <span>Detection Rules</span>
+                </button>
+                <button onclick="switchView('audit')" id="nav-audit" class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-navy-800 hover:text-white transition">
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    <span>Audit Trail</span>
+                </button>
+            </nav>
+
+            <div class="px-4 text-xs text-slate-400 border-t border-navy-800 pt-4">
+                <div class="font-medium text-slate-300">Model: LogisticRegression v1.0</div>
+                <div class="text-[11px] text-slate-400 mt-1">Ensemble: 30% Rules, 25% MAD Anomaly, 25% ML, 20% Graph</div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 overflow-y-auto custom-scrollbar p-6 bg-slate-100/70" id="main-content">
+            
+            <!-- SECTION 1: OVERVIEW -->
+            <div id="view-overview" class="space-y-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h1 class="text-2xl font-bold text-slate-900">Financial Investigation Command Center</h1>
+                        <p class="text-sm text-slate-500 mt-1">Real-time fraud surveillance, explainable AI scoring, and evidence correlation.</p>
+                    </div>
+                    <button onclick="refreshDashboard()" class="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs px-3 py-2 rounded-lg font-medium shadow-sm transition flex items-center space-x-1.5">
+                        <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                        <span>Refresh Telemetry</span>
+                    </button>
+                </div>
+
+                <!-- KPI Metric Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Processed Transactions</div>
+                        <div class="text-2xl font-bold text-slate-900 mt-2" id="kpi-txns">--</div>
+                        <div class="text-xs text-slate-500 mt-1 flex items-center space-x-1">
+                            <span class="text-emerald-600 font-medium">● 42.5 TPM</span>
+                            <span>steady rate</span>
+                        </div>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Alerts Generated</div>
+                        <div class="text-2xl font-bold text-amber-600 mt-2" id="kpi-alerts">--</div>
+                        <div class="text-xs text-slate-500 mt-1">Requiring triage or review</div>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Active Investigations</div>
+                        <div class="text-2xl font-bold text-sky-600 mt-2" id="kpi-invs">--</div>
+                        <div class="text-xs text-slate-500 mt-1" id="kpi-high-invs">-- High priority cases</div>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Confirmed Fraud / FPR</div>
+                        <div class="text-2xl font-bold text-red-600 mt-2" id="kpi-fraud">--</div>
+                        <div class="text-xs text-slate-500 mt-1" id="kpi-fpr">Verified FPR: --%</div>
+                    </div>
+                </div>
+
+                <!-- Risk Distribution & Quick Launch Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm col-span-2">
+                        <h2 class="text-base font-semibold text-slate-900 mb-4">Risk Tier Calibration & Volume Breakdown</h2>
+                        <div class="grid grid-cols-4 gap-3 text-center" id="risk-bands-grid">
+                            <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                                <div class="text-xs font-semibold text-emerald-800">Routine (0-24)</div>
+                                <div class="text-xl font-bold text-emerald-700 mt-1" id="band-routine">0</div>
+                                <div class="text-[11px] text-emerald-600 mt-0.5">Automated Clear</div>
+                            </div>
+                            <div class="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                <div class="text-xs font-semibold text-blue-800">Low (25-49)</div>
+                                <div class="text-xl font-bold text-blue-700 mt-1" id="band-low">0</div>
+                                <div class="text-[11px] text-blue-600 mt-0.5">Periodic Audit</div>
+                            </div>
+                            <div class="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                                <div class="text-xs font-semibold text-amber-800">Elevated (50-74)</div>
+                                <div class="text-xl font-bold text-amber-700 mt-1" id="band-elevated">0</div>
+                                <div class="text-[11px] text-amber-600 mt-0.5">Analyst Review</div>
+                            </div>
+                            <div class="p-3 bg-red-50 border border-red-200 rounded-lg">
+                                <div class="text-xs font-semibold text-red-800">High (75-100)</div>
+                                <div class="text-xl font-bold text-red-700 mt-1" id="band-high">0</div>
+                                <div class="text-[11px] text-red-600 mt-0.5">Self-Directed Inv</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <h2 class="text-base font-semibold text-slate-900 mb-2">Self-Directed Agent</h2>
+                        <p class="text-xs text-slate-500 mb-4">When risk exceeds threshold 70, SentinelFlow initiates a 13-step evidence correlation sequence.</p>
+                        <div class="space-y-2 text-xs">
+                            <div class="flex items-center space-x-2 text-slate-700">
+                                <span class="w-1.5 h-1.5 rounded-full bg-sky-500"></span>
+                                <span>Inspects triggering transaction</span>
+                            </div>
+                            <div class="flex items-center space-x-2 text-slate-700">
+                                <span class="w-1.5 h-1.5 rounded-full bg-sky-500"></span>
+                                <span>Evaluates MAD rolling deviations</span>
+                            </div>
+                            <div class="flex items-center space-x-2 text-slate-700">
+                                <span class="w-1.5 h-1.5 rounded-full bg-sky-500"></span>
+                                <span>Discovers shared devices & counterparties</span>
+                            </div>
+                            <div class="flex items-center space-x-2 text-slate-700">
+                                <span class="w-1.5 h-1.5 rounded-full bg-sky-500"></span>
+                                <span>Collects supporting & contradictory facts</span>
+                            </div>
+                            <div class="flex items-center space-x-2 text-slate-700">
+                                <span class="w-1.5 h-1.5 rounded-full bg-sky-500"></span>
+                                <span>Generates structured investigation checklist</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Live Alerts Table Preview -->
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+                        <h2 class="text-base font-semibold text-slate-900">Priority Review Queue</h2>
+                        <button onclick="switchView('alerts')" class="text-xs text-sky-600 hover:text-sky-700 font-medium">View all alerts &rarr;</button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs text-slate-600">
+                            <thead class="bg-slate-50 text-slate-700 uppercase font-semibold border-b border-slate-200">
+                                <tr>
+                                    <th class="px-5 py-3">Alert Ref</th>
+                                    <th class="px-5 py-3">Severity</th>
+                                    <th class="px-5 py-3">Risk Score</th>
+                                    <th class="px-5 py-3">Account</th>
+                                    <th class="px-5 py-3">Summary</th>
+                                    <th class="px-5 py-3">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="overview-alerts-tbody">
+                                <tr><td colspan="6" class="px-5 py-6 text-center text-slate-400">Loading alerts telemetry...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 2: TRANSACTIONS -->
+            <div id="view-transactions" class="space-y-4 hidden">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h1 class="text-2xl font-bold text-slate-900">Live Transaction Stream</h1>
+                        <p class="text-sm text-slate-500 mt-0.5">Ingested via streaming event pipeline with real-time risk evaluation.</p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <select id="filter-txn-risk" onchange="loadTransactions()" class="text-xs bg-white border border-slate-300 rounded-lg px-3 py-1.5">
+                            <option value="">All Risk Tiers</option>
+                            <option value="HIGH">High Priority Only</option>
+                            <option value="ELEVATED">Elevated</option>
+                            <option value="LOW">Low</option>
+                            <option value="ROUTINE">Routine</option>
+                        </select>
+                        <button onclick="loadTransactions()" class="bg-sky-600 hover:bg-sky-500 text-white text-xs px-3 py-1.5 rounded-lg font-medium shadow-sm transition">Refresh</button>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <table class="w-full text-left text-xs text-slate-600">
+                        <thead class="bg-slate-50 text-slate-700 uppercase font-semibold border-b border-slate-200">
+                            <tr>
+                                <th class="px-5 py-3">Transaction ID</th>
+                                <th class="px-5 py-3">Amount</th>
+                                <th class="px-5 py-3">Source Account</th>
+                                <th class="px-5 py-3">Counterparty / Beneficiary</th>
+                                <th class="px-5 py-3">Channel</th>
+                                <th class="px-5 py-3">Risk Score</th>
+                                <th class="px-5 py-3">Tier</th>
+                                <th class="px-5 py-3">Time</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactions-tbody">
+                            <tr><td colspan="8" class="px-5 py-6 text-center text-slate-400">Loading transactions...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SECTION 3: ALERTS -->
+            <div id="view-alerts" class="space-y-4 hidden">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h1 class="text-2xl font-bold text-slate-900">Alerts & Triage Queue</h1>
+                        <p class="text-sm text-slate-500 mt-0.5">Explainable detections generated from multi-modal fraud heuristics.</p>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <table class="w-full text-left text-xs text-slate-600">
+                        <thead class="bg-slate-50 text-slate-700 uppercase font-semibold border-b border-slate-200">
+                            <tr>
+                                <th class="px-5 py-3">Alert Ref</th>
+                                <th class="px-5 py-3">Severity</th>
+                                <th class="px-5 py-3">Risk Score</th>
+                                <th class="px-5 py-3">Account</th>
+                                <th class="px-5 py-3">Findings</th>
+                                <th class="px-5 py-3">Status</th>
+                                <th class="px-5 py-3">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="alerts-tbody">
+                            <tr><td colspan="7" class="px-5 py-6 text-center text-slate-400">Loading alerts...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SECTION 4: INVESTIGATIONS -->
+            <div id="view-investigations" class="space-y-4 hidden">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h1 class="text-2xl font-bold text-slate-900">Investigations Workspace</h1>
+                        <p class="text-sm text-slate-500 mt-0.5">Formal case dossiers with evidence trails, peer review, and audit governance.</p>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <table class="w-full text-left text-xs text-slate-600">
+                        <thead class="bg-slate-50 text-slate-700 uppercase font-semibold border-b border-slate-200">
+                            <tr>
+                                <th class="px-5 py-3">Case Number</th>
+                                <th class="px-5 py-3">Title</th>
+                                <th class="px-5 py-3">Priority</th>
+                                <th class="px-5 py-3">Status</th>
+                                <th class="px-5 py-3">Completeness</th>
+                                <th class="px-5 py-3">Disposition</th>
+                                <th class="px-5 py-3">Open Dossier</th>
+                            </tr>
+                        </thead>
+                        <tbody id="investigations-tbody">
+                            <tr><td colspan="7" class="px-5 py-6 text-center text-slate-400">Loading cases...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SECTION 5: CASE DETAILS WORKBENCH -->
+            <div id="view-case-detail" class="space-y-6 hidden">
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <div class="flex items-center space-x-3">
+                                <button onclick="switchView('investigations')" class="text-slate-400 hover:text-slate-600 text-xs font-medium flex items-center space-x-1">
+                                    <span>&larr; Back to Cases</span>
+                                </button>
+                                <span class="text-slate-300">|</span>
+                                <span class="font-mono text-xs font-semibold text-sky-700 bg-sky-50 px-2.5 py-1 rounded border border-sky-200" id="case-header-num">CASE-2026-001</span>
+                                <span class="text-xs font-semibold px-2 py-0.5 rounded" id="case-header-priority">HIGH</span>
+                                <span class="text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700" id="case-header-status">NEW</span>
+                            </div>
+                            <h2 class="text-xl font-bold text-slate-900 mt-2" id="case-header-title">Investigation Title</h2>
+                            <p class="text-xs text-slate-500 mt-1 max-w-3xl" id="case-header-summary">Summary</p>
+                        </div>
+
+                        <div class="flex items-center space-x-2">
+                            <button onclick="openDispositionModal()" class="bg-sky-600 hover:bg-sky-500 text-white text-xs px-3 py-2 rounded-lg font-medium shadow-sm transition">
+                                Record Disposition
+                            </button>
+                            <a id="btn-export-pdf" target="_blank" class="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs px-3 py-2 rounded-lg font-medium shadow-sm transition flex items-center space-x-1">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                <span>Export Dossier</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Workbench Tabs -->
+                    <div class="flex space-x-6 border-b border-slate-200 mt-6 text-sm font-medium">
+                        <button onclick="switchCaseTab('evidence')" id="tab-evidence" class="tab-btn active pb-3">Evidence Items (<span id="cnt-tab-evidence">0</span>)</button>
+                        <button onclick="switchCaseTab('tasks')" id="tab-tasks" class="tab-btn pb-3">Investigative Checklist</button>
+                        <button onclick="switchCaseTab('graph')" id="tab-graph" class="tab-btn pb-3">Sub-Graph Network</button>
+                        <button onclick="switchCaseTab('copilot')" id="tab-copilot" class="tab-btn pb-3 text-sky-600 font-semibold flex items-center space-x-1">
+                            <span>AI Copilot</span>
+                        </button>
+                    </div>
+
+                    <!-- Tab Contents -->
+                    <div class="pt-6">
+                        <!-- Evidence Tab -->
+                        <div id="casetab-evidence" class="space-y-3">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="text-xs text-slate-500">Every alert automatically correlates and produces typed, tamper-evident records.</div>
+                                <div class="text-xs font-semibold text-slate-700">Evidence Completeness: <span id="case-comp-score" class="text-sky-600">0%</span></div>
+                            </div>
+                            <div id="case-evidence-list" class="space-y-2.5">
+                                <div class="text-center py-6 text-xs text-slate-400">Loading case evidence records...</div>
+                            </div>
+                        </div>
+
+                        <!-- Tasks Checklist Tab -->
+                        <div id="casetab-tasks" class="space-y-3 hidden">
+                            <div class="text-xs text-slate-500 mb-2">Standardized investigative procedure tasks generated by platform playbooks.</div>
+                            <div id="case-tasks-list" class="space-y-2">
+                                <div class="text-center py-6 text-xs text-slate-400">Loading checklist tasks...</div>
+                            </div>
+                        </div>
+
+                        <!-- Graph Tab -->
+                        <div id="casetab-graph" class="space-y-3 hidden">
+                            <div class="text-xs text-slate-500 mb-2">Interactive multi-hop relationship graph constructed from transactions and entities.</div>
+                            <div id="case-graph-container" class="h-96 w-full bg-slate-900 rounded-xl border border-slate-800 p-4 relative overflow-hidden flex items-center justify-center">
+                                <svg id="case-graph-svg" class="w-full h-full"></svg>
+                            </div>
+                        </div>
+
+                        <!-- AI Copilot Tab -->
+                        <div id="casetab-copilot" class="space-y-4 hidden">
+                            <div class="bg-sky-50 border border-sky-200 rounded-lg p-3 text-xs text-sky-900">
+                                <b>Investigation Copilot Active:</b> Natural-language queries are strictly grounded in persisted evidence items with verifiable citations.
+                            </div>
+                            <div class="space-y-2" id="copilot-history">
+                                <div class="p-3 bg-slate-100 rounded-lg text-xs">
+                                    <div class="font-semibold text-slate-800">Copilot:</div>
+                                    <div class="mt-1 text-slate-600">I have analyzed the triggering transaction and counterparties. Ask me why this was flagged, what evidence supports or contradicts fraud, or what steps to examine next.</div>
+                                </div>
+                            </div>
+                            <div class="flex space-x-2">
+                                <input type="text" id="copilot-input" placeholder="e.g. Why was this transaction flagged? or What contradicts fraud?" class="flex-1 bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-sky-500">
+                                <button onclick="sendCopilotQuery()" class="bg-sky-600 hover:bg-sky-500 text-white text-xs px-4 py-2 rounded-lg font-medium shadow-sm transition">Query</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 6: NETWORK INTELLIGENCE -->
+            <div id="view-network" class="space-y-6 hidden">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h1 class="text-2xl font-bold text-slate-900">Network Intelligence & Topological Clusters</h1>
+                        <p class="text-sm text-slate-500 mt-0.5">Identifies fan-in collection hubs, circular flow, and mule forwarders across the financial graph.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="col-span-2 bg-slate-900 rounded-xl border border-slate-800 p-4 h-[500px] flex items-center justify-center relative shadow-inner">
+                        <svg id="global-graph-svg" class="w-full h-full"></svg>
+                        <div class="absolute bottom-3 left-3 bg-slate-800/90 border border-slate-700 px-3 py-1.5 rounded text-[11px] text-slate-300">
+                            Nodes: Accounts (Blue), Customers (Sky), Devices (Amber)
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
+                        <h2 class="text-sm font-semibold text-slate-900">Detected Suspicious Graph Patterns</h2>
+                        <div id="suspicious-paths-list" class="space-y-3">
+                            <div class="text-xs text-slate-400 py-6 text-center">Analyzing graph topologies...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 7: FEEDBACK & CONTROLLED LEARNING -->
+            <div id="view-learning" class="space-y-6 hidden">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h1 class="text-2xl font-bold text-slate-900">Feedback & Controlled Continuous Learning</h1>
+                        <p class="text-sm text-slate-500 mt-0.5">Governed retraining pipeline: only human-verified dispositions contribute to dataset generation.</p>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button onclick="triggerTrainCandidate()" class="bg-purple-600 hover:bg-purple-500 text-white text-xs px-3 py-2 rounded-lg font-medium shadow-sm transition">Train Candidate Model</button>
+                        <button onclick="triggerPromoteCandidate()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-3 py-2 rounded-lg font-medium shadow-sm transition">Promote Candidate</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="learning-metrics-grid">
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Active Scoring Model</div>
+                        <div class="text-xl font-bold text-slate-900 mt-2" id="active-model-name">--</div>
+                        <div class="text-xs text-slate-500 mt-1" id="active-model-stats">Baseline Benchmark</div>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Training Label Readiness</div>
+                        <div class="text-xl font-bold text-purple-600 mt-2" id="training-readiness">--</div>
+                        <div class="text-xs text-slate-500 mt-1" id="training-samples-info">-- / 20 required samples</div>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Candidate Model Status</div>
+                        <div class="text-xl font-bold text-slate-700 mt-2" id="candidate-model-status">None</div>
+                        <div class="text-xs text-slate-500 mt-1" id="candidate-metrics-info">Awaiting evaluation run</div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+                    <h2 class="text-base font-semibold text-slate-900 mb-2">Platform Label Policy (Responsible AI Safeguard)</h2>
+                    <p class="text-xs text-slate-600 mb-4">To prevent model degradation and feedback loops, SentinelFlow AI enforces a strict label policy:</p>
+                    <div class="grid grid-cols-3 gap-4 text-xs">
+                        <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                            <div class="font-bold text-emerald-800">Confirmed Fraud &rarr; Positive Label (1)</div>
+                            <div class="text-emerald-700 mt-1">Requires authorized analyst disposition and peer review where mandated.</div>
+                        </div>
+                        <div class="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div class="font-bold text-blue-800">False Positive &rarr; Negative Label (0)</div>
+                            <div class="text-blue-700 mt-1">Legitimate activity verified by analyst. Contributes directly to reducing false positives.</div>
+                        </div>
+                        <div class="p-3 bg-slate-100 border border-slate-200 rounded-lg">
+                            <div class="font-bold text-slate-800">Inconclusive / Suspicious &rarr; Excluded</div>
+                            <div class="text-slate-600 mt-1">Excluded from binary classification training sets to prevent noise contamination.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 8: DETECTION RULES -->
+            <div id="view-rules" class="space-y-6 hidden">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h1 class="text-2xl font-bold text-slate-900">Configurable Detection Rules</h1>
+                        <p class="text-sm text-slate-500 mt-0.5">Versioned rules with historical immutability and What-If simulation support.</p>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <table class="w-full text-left text-xs text-slate-600">
+                        <thead class="bg-slate-50 text-slate-700 uppercase font-semibold border-b border-slate-200">
+                            <tr>
+                                <th class="px-5 py-3">Rule Code</th>
+                                <th class="px-5 py-3">Rule Name & Category</th>
+                                <th class="px-5 py-3">Active Thresholds</th>
+                                <th class="px-5 py-3">Severity</th>
+                                <th class="px-5 py-3">Version</th>
+                                <th class="px-5 py-3">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rules-tbody">
+                            <tr><td colspan="6" class="px-5 py-6 text-center text-slate-400">Loading rules...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SECTION 9: AUDIT TRAIL -->
+            <div id="view-audit" class="space-y-6 hidden">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h1 class="text-2xl font-bold text-slate-900">Immutable Audit Trail</h1>
+                        <p class="text-sm text-slate-500 mt-0.5">Append-only compliance log recording all analyst interventions, rule changes, and model actions.</p>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <table class="w-full text-left text-xs text-slate-600">
+                        <thead class="bg-slate-50 text-slate-700 uppercase font-semibold border-b border-slate-200">
+                            <tr>
+                                <th class="px-5 py-3">Timestamp</th>
+                                <th class="px-5 py-3">Actor</th>
+                                <th class="px-5 py-3">Action</th>
+                                <th class="px-5 py-3">Resource</th>
+                                <th class="px-5 py-3">Metadata</th>
+                            </tr>
+                        </thead>
+                        <tbody id="audit-tbody">
+                            <tr><td colspan="5" class="px-5 py-6 text-center text-slate-400">Loading audit records...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Disposition Modal -->
+    <div id="disposition-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-xl shadow-2xl border border-slate-200 max-w-lg w-full p-6 space-y-4">
+            <h3 class="text-base font-bold text-slate-900">Record Case Disposition</h3>
+            <p class="text-xs text-slate-500">Authorized investigator decision. This will be audited and processed through the continuous learning label policy.</p>
+            
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-medium text-slate-700 mb-1">Final Disposition</label>
+                    <select id="disp-select" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs">
+                        <option value="CONFIRMED_FRAUD">Confirmed Fraud (Eligible for Positive Training Label)</option>
+                        <option value="LEGITIMATE_ACTIVITY">Legitimate Activity / False Positive (Eligible for Negative Label)</option>
+                        <option value="SUSPICIOUS_UNCONFIRMED">Suspicious Unconfirmed (Excluded from Training)</option>
+                        <option value="INCONCLUSIVE">Inconclusive (Excluded from Training)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-medium text-slate-700 mb-1">Investigative Rationale (Minimum 10 chars)</label>
+                    <textarea id="disp-rationale" rows="3" placeholder="Provide auditable justification referencing examined facts..." class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs"></textarea>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <input type="checkbox" id="disp-peer-review" class="rounded text-sky-600">
+                    <label for="disp-peer-review" class="text-slate-700">Require Senior Peer Review before resolving case</label>
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-2 pt-2 border-t border-slate-100">
+                <button onclick="closeDispositionModal()" class="px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50">Cancel</button>
+                <button onclick="submitDisposition()" class="px-4 py-1.5 bg-sky-600 text-white rounded-lg text-xs font-medium hover:bg-sky-500 shadow-sm">Confirm & Submit</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Script -->
+    <script>
+        const API_BASE = '/api/v1';
+        let currentActiveCaseId = null;
+
+        function switchView(viewId) {
+            const views = ['overview', 'transactions', 'alerts', 'investigations', 'case-detail', 'network', 'learning', 'rules', 'audit'];
+            views.forEach(v => {
+                const el = document.getElementById('view-' + v);
+                const nav = document.getElementById('nav-' + v);
+                if (el) el.classList.add('hidden');
+                if (nav) nav.classList.remove('bg-navy-800', 'text-white');
+            });
+            const activeEl = document.getElementById('view-' + viewId);
+            const activeNav = document.getElementById('nav-' + viewId);
+            if (activeEl) activeEl.classList.remove('hidden');
+            if (activeNav) activeNav.classList.add('bg-navy-800', 'text-white');
+
+            if (viewId === 'overview') refreshDashboard();
+            if (viewId === 'transactions') loadTransactions();
+            if (viewId === 'alerts') loadAlerts();
+            if (viewId === 'investigations') loadInvestigations();
+            if (viewId === 'network') loadNetworkIntelligence();
+            if (viewId === 'learning') loadLearningStatus();
+            if (viewId === 'rules') loadRules();
+            if (viewId === 'audit') loadAuditTrail();
+        }
+
+        async function refreshDashboard() {
+            try {
+                const res = await fetch(`${API_BASE}/dashboard/summary`);
+                const data = await res.json();
+                document.getElementById('kpi-txns').innerText = data.transactions_processed.toLocaleString();
+                document.getElementById('kpi-alerts').innerText = data.alerts_generated.toLocaleString();
+                document.getElementById('kpi-invs').innerText = data.open_investigations.toLocaleString();
+                document.getElementById('kpi-high-invs').innerText = `${data.high_priority_cases} High Priority`;
+                document.getElementById('kpi-fraud').innerText = data.confirmed_fraud_count.toLocaleString();
+                document.getElementById('kpi-fpr').innerText = `Verified FPR: ${data.verified_false_positive_rate}%`;
+
+                // Trends
+                const trendsRes = await fetch(`${API_BASE}/dashboard/trends`);
+                const trends = await trendsRes.json();
+                if (trends.risk_score_distribution) {
+                    trends.risk_score_distribution.forEach(b => {
+                        if (b.band.includes('Routine')) document.getElementById('band-routine').innerText = b.count;
+                        if (b.band.includes('Low')) document.getElementById('band-low').innerText = b.count;
+                        if (b.band.includes('Elevated')) document.getElementById('band-elevated').innerText = b.count;
+                        if (b.band.includes('High')) document.getElementById('band-high').innerText = b.count;
+                    });
+                }
+
+                // Recent priority alerts
+                const alertsRes = await fetch(`${API_BASE}/alerts?page_size=5`);
+                const alertsData = await alertsRes.json();
+                document.getElementById('badge-alert-count').innerText = alertsData.total || 0;
+                renderAlertsTable(alertsData.items, 'overview-alerts-tbody');
+            } catch (err) {
+                console.error("Dashboard error", err);
+            }
+        }
+
+        async function loadTransactions() {
+            const riskFilter = document.getElementById('filter-txn-risk').value;
+            let url = `${API_BASE}/transactions?page_size=30`;
+            if (riskFilter) url += `&risk_band=${riskFilter}`;
+            const res = await fetch(url);
+            const data = await res.json();
+            const tbody = document.getElementById('transactions-tbody');
+            if (!data.items || data.items.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center py-6 text-slate-400">No transactions found</td></tr>';
+                return;
+            }
+            tbody.innerHTML = data.items.map(t => `
+                <tr class="border-b border-slate-100 hover:bg-slate-50/80">
+                    <td class="px-5 py-3 font-mono font-medium text-slate-800">${t.id}</td>
+                    <td class="px-5 py-3 font-semibold text-slate-900">$${Number(t.amount).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                    <td class="px-5 py-3 font-mono text-slate-600">${t.source_account_id}</td>
+                    <td class="px-5 py-3 text-slate-700">${t.beneficiary_name || t.destination_account_id || 'N/A'}</td>
+                    <td class="px-5 py-3 text-slate-500">${t.payment_channel}</td>
+                    <td class="px-5 py-3 font-mono font-semibold">${t.risk_score.toFixed(1)}</td>
+                    <td class="px-5 py-3">${getRiskBadge(t.risk_band)}</td>
+                    <td class="px-5 py-3 text-slate-400">${t.created_at ? t.created_at.substring(11, 19) : ''}</td>
+                </tr>
+            `).join('');
+        }
+
+        async function loadAlerts() {
+            const res = await fetch(`${API_BASE}/alerts?page_size=50`);
+            const data = await res.json();
+            renderAlertsTable(data.items, 'alerts-tbody');
+        }
+
+        function renderAlertsTable(items, tbodyId) {
+            const tbody = document.getElementById(tbodyId);
+            if (!items || items.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-6 text-slate-400">No alerts in review queue</td></tr>';
+                return;
+            }
+            tbody.innerHTML = items.map(a => `
+                <tr class="border-b border-slate-100 hover:bg-slate-50/80">
+                    <td class="px-5 py-3 font-mono font-bold text-sky-700">${a.alert_ref}</td>
+                    <td class="px-5 py-3">${getSeverityBadge(a.severity)}</td>
+                    <td class="px-5 py-3 font-mono font-bold text-slate-800">${a.risk_score.toFixed(1)}</td>
+                    <td class="px-5 py-3 font-mono text-slate-600">${a.account_id}</td>
+                    <td class="px-5 py-3 max-w-xs truncate text-slate-600" title="${a.summary}">${a.title}</td>
+                    <td class="px-5 py-3 text-slate-500">${a.status}</td>
+                    <td class="px-5 py-3">
+                        <button onclick="investigateAlert('${a.id}')" class="bg-sky-600 hover:bg-sky-500 text-white text-[11px] px-2.5 py-1 rounded font-medium shadow-sm transition">Investigate</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function investigateAlert(alertId) {
+            try {
+                const res = await fetch(`${API_BASE}/alerts/${alertId}/investigate`, { method: 'POST' });
+                const data = await res.json();
+                if (data.investigation_id) {
+                    openCaseDetail(data.investigation_id);
+                }
+            } catch (e) {
+                alert("Failed to convert alert: " + e.message);
+            }
+        }
+
+        async function loadInvestigations() {
+            const res = await fetch(`${API_BASE}/investigations?page_size=50`);
+            const data = await res.json();
+            document.getElementById('badge-inv-count').innerText = data.total || 0;
+            const tbody = document.getElementById('investigations-tbody');
+            if (!data.items || data.items.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-6 text-slate-400">No active investigations</td></tr>';
+                return;
+            }
+            tbody.innerHTML = data.items.map(i => `
+                <tr class="border-b border-slate-100 hover:bg-slate-50/80">
+                    <td class="px-5 py-3 font-mono font-bold text-sky-700">${i.case_number}</td>
+                    <td class="px-5 py-3 font-medium text-slate-900">${i.title}</td>
+                    <td class="px-5 py-3">${getSeverityBadge(i.priority)}</td>
+                    <td class="px-5 py-3 font-medium text-slate-700">${i.status}</td>
+                    <td class="px-5 py-3 font-mono text-sky-600 font-semibold">${i.evidence_completeness_score}%</td>
+                    <td class="px-5 py-3">${i.disposition ? `<span class="bg-slate-100 text-slate-800 px-2 py-0.5 rounded text-[10px] font-semibold">${i.disposition}</span>` : '<span class="text-slate-400">In Progress</span>'}</td>
+                    <td class="px-5 py-3">
+                        <button onclick="openCaseDetail('${i.id}')" class="bg-navy-800 hover:bg-navy-700 text-white text-[11px] px-2.5 py-1 rounded font-medium transition">Open Dossier</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function openCaseDetail(caseId) {
+            currentActiveCaseId = caseId;
+            switchView('case-detail');
+            const res = await fetch(`${API_BASE}/investigations/${caseId}`);
+            const data = await res.json();
+
+            document.getElementById('case-header-num').innerText = data.case_number;
+            document.getElementById('case-header-title').innerText = data.title;
+            document.getElementById('case-header-summary').innerText = data.summary;
+            document.getElementById('case-header-priority').innerText = data.priority;
+            document.getElementById('case-header-status').innerText = data.status;
+            document.getElementById('case-comp-score').innerText = `${data.evidence_completeness_score}%`;
+            document.getElementById('btn-export-pdf').href = `${API_BASE}/reports/investigations/${caseId}/pdf`;
+
+            loadCaseEvidence(caseId);
+            loadCaseTasks(caseId);
+            loadCaseGraph(caseId);
+        }
+
+        function switchCaseTab(tabId) {
+            ['evidence', 'tasks', 'graph', 'copilot'].forEach(t => {
+                document.getElementById('casetab-' + t).classList.add('hidden');
+                document.getElementById('tab-' + t).classList.remove('active');
+            });
+            document.getElementById('casetab-' + tabId).classList.remove('hidden');
+            document.getElementById('tab-' + tabId).classList.add('active');
+        }
+
+        async function loadCaseEvidence(caseId) {
+            const res = await fetch(`${API_BASE}/investigations/${caseId}/evidence`);
+            const items = await res.json();
+            document.getElementById('cnt-tab-evidence').innerText = items.length;
+            const container = document.getElementById('case-evidence-list');
+            if (items.length === 0) {
+                container.innerHTML = '<div class="text-xs text-slate-400 py-4 text-center">No evidence registered yet</div>';
+                return;
+            }
+            container.innerHTML = items.map(e => `
+                <div class="p-3 bg-white border border-slate-200 rounded-lg shadow-sm flex items-start justify-between">
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <span class="font-mono text-[10px] font-bold text-sky-700 bg-sky-50 px-1.5 py-0.5 rounded">${e.evidence_type}</span>
+                            <span class="text-xs font-semibold text-slate-800">${e.description}</span>
+                        </div>
+                        <div class="text-[11px] text-slate-500 font-mono mt-1">Hash: ${e.integrity_hash ? e.integrity_hash.substring(0, 20) + '...' : 'Verified'} | Collector: ${e.collector}</div>
+                    </div>
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded ${e.verification_status === 'SUPPORTING' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">${e.verification_status}</span>
+                </div>
+            `).join('');
+        }
+
+        async function loadCaseTasks(caseId) {
+            const res = await fetch(`${API_BASE}/investigations/${caseId}/tasks`);
+            const tasks = await res.json();
+            const container = document.getElementById('case-tasks-list');
+            container.innerHTML = tasks.map(t => `
+                <div class="p-3 bg-white border border-slate-200 rounded-lg flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <input type="checkbox" ${t.is_completed ? 'checked disabled' : ''} onchange="toggleTask('${t.id}', this.checked)" class="rounded text-sky-600">
+                        <div>
+                            <div class="text-xs font-semibold ${t.is_completed ? 'line-through text-slate-400' : 'text-slate-800'}">${t.title}</div>
+                            <div class="text-[11px] text-slate-500">${t.description || ''}</div>
+                        </div>
+                    </div>
+                    ${t.is_completed ? '<span class="text-[10px] text-emerald-600 font-semibold">Done</span>' : '<span class="text-[10px] text-slate-400">Pending</span>'}
+                </div>
+            `).join('');
+        }
+
+        async function toggleTask(taskId, isCompleted) {
+            await fetch(`${API_BASE}/investigations/${currentActiveCaseId}/tasks/${taskId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ is_completed: isCompleted })
+            });
+            loadCaseTasks(currentActiveCaseId);
+        }
+
+        async function loadCaseGraph(caseId) {
+            const res = await fetch(`${API_BASE}/graph?investigation_id=${caseId}`);
+            const data = await res.json();
+            renderSVGGraph(data, 'case-graph-svg');
+        }
+
+        async function loadNetworkIntelligence() {
+            const res = await fetch(`${API_BASE}/graph`);
+            const data = await res.json();
+            renderSVGGraph(data, 'global-graph-svg');
+
+            const pathsRes = await fetch(`${API_BASE}/graph/suspicious-paths`);
+            const paths = await pathsRes.json();
+            const container = document.getElementById('suspicious-paths-list');
+            if (paths.length === 0) {
+                container.innerHTML = '<div class="text-xs text-slate-400">No multi-hop suspicious patterns detected.</div>';
+                return;
+            }
+            container.innerHTML = paths.map(p => `
+                <div class="p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs space-y-1">
+                    <div class="font-bold text-sky-800">${p.pattern_name}</div>
+                    <div class="text-slate-600">${p.explanation}</div>
+                    <div class="text-[10px] text-slate-500 italic">Alt: ${p.alternative_explanations}</div>
+                </div>
+            `).join('');
+        }
+
+        function renderSVGGraph(graphData, svgId) {
+            const svg = document.getElementById(svgId);
+            if (!svg || !graphData.nodes || graphData.nodes.length === 0) return;
+            const width = 600;
+            const height = 350;
+            svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+            
+            // Assign radial layout coordinates
+            const nodeMap = {};
+            const count = graphData.nodes.length;
+            const cx = width / 2;
+            const cy = height / 2;
+            const radius = Math.min(width, height) * 0.38;
+
+            graphData.nodes.forEach((n, idx) => {
+                const angle = (idx / count) * 2 * Math.PI;
+                nodeMap[n.id] = {
+                    x: cx + radius * Math.cos(angle),
+                    y: cy + radius * Math.sin(angle),
+                    node: n
+                };
+            });
+
+            // Draw edges
+            let edgesSvg = '';
+            (graphData.edges || []).forEach(e => {
+                const s = nodeMap[e.source];
+                const t = nodeMap[e.target];
+                if (s && t) {
+                    edgesSvg += `<line x1="${s.x}" y1="${s.y}" x2="${t.x}" y2="${t.y}" stroke="#64748b" stroke-width="1.5" stroke-dasharray="3,3" opacity="0.6"/>`;
+                }
+            });
+
+            // Draw nodes
+            let nodesSvg = '';
+            Object.values(nodeMap).forEach(item => {
+                const isAcc = item.node.type === 'ACCOUNT';
+                const isCust = item.node.type === 'CUSTOMER';
+                const fill = isAcc ? '#38bdf8' : (isCust ? '#818cf8' : '#fbbf24');
+                nodesSvg += `
+                    <g transform="translate(${item.x},${item.y})">
+                        <circle r="14" fill="${fill}" stroke="#0f172a" stroke-width="2"/>
+                        <text y="24" text-anchor="middle" fill="#f8fafc" font-size="10" font-family="sans-serif">${item.node.label.substring(0, 14)}</text>
+                    </g>
+                `;
+            });
+
+            svg.innerHTML = edgesSvg + nodesSvg;
+        }
+
+        async function sendCopilotQuery() {
+            const input = document.getElementById('copilot-input');
+            const q = input.value.trim();
+            if (!q || !currentActiveCaseId) return;
+
+            const hist = document.getElementById('copilot-history');
+            hist.innerHTML += `
+                <div class="p-3 bg-white border border-slate-200 rounded-lg text-xs">
+                    <div class="font-semibold text-sky-800">Investigator:</div>
+                    <div class="mt-0.5 text-slate-700">${q}</div>
+                </div>
+            `;
+            input.value = '';
+
+            try {
+                const res = await fetch(`${API_BASE}/intelligence/copilot`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ investigation_id: currentActiveCaseId, query: q })
+                });
+                const data = await res.json();
+                hist.innerHTML += `
+                    <div class="p-3 bg-sky-50/80 border border-sky-200 rounded-lg text-xs space-y-1">
+                        <div class="font-semibold text-sky-900">SentinelFlow AI Copilot:</div>
+                        <div class="text-slate-700 whitespace-pre-line">${data.answer}</div>
+                    </div>
+                `;
+            } catch (e) {
+                alert("Copilot query failed: " + e.message);
+            }
+        }
+
+        function openDispositionModal() {
+            document.getElementById('disposition-modal').classList.remove('hidden');
+        }
+        function closeDispositionModal() {
+            document.getElementById('disposition-modal').classList.add('hidden');
+        }
+
+        async function submitDisposition() {
+            const disp = document.getElementById('disp-select').value;
+            const rat = document.getElementById('disp-rationale').value.trim();
+            const peer = document.getElementById('disp-peer-review').checked;
+            if (rat.length < 10) {
+                alert("Please provide at least 10 characters of auditable rationale.");
+                return;
+            }
+            try {
+                const res = await fetch(`${API_BASE}/investigations/${currentActiveCaseId}/disposition`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ disposition: disp, rationale: rat, requires_peer_review: peer })
+                });
+                const data = await res.json();
+                closeDispositionModal();
+                alert(`Disposition registered! Case status: ${data.status}. Feedback recorded.`);
+                openCaseDetail(currentActiveCaseId);
+            } catch (e) {
+                alert("Disposition submission failed: " + e.message);
+            }
+        }
+
+        async function loadLearningStatus() {
+            const res = await fetch(`${API_BASE}/learning/status`);
+            const data = await res.json();
+            document.getElementById('active-model-name').innerText = data.current_active_model;
+            document.getElementById('training-readiness').innerText = data.training_data_readiness;
+            document.getElementById('training-samples-info').innerText = `${data.labeled_samples_count} eligible verified samples`;
+            document.getElementById('candidate-model-status').innerText = data.candidate_model_available ? data.candidate_version : 'None';
+        }
+
+        async function triggerTrainCandidate() {
+            const res = await fetch(`${API_BASE}/learning/train-candidate`, { method: 'POST' });
+            const data = await res.json();
+            alert(data.message || data.eval_report?.reason || "Candidate training executed.");
+            loadLearningStatus();
+        }
+
+        async function triggerPromoteCandidate() {
+            const res = await fetch(`${API_BASE}/learning/promote-candidate`, { method: 'POST' });
+            const data = await res.json();
+            alert(data.message);
+            loadLearningStatus();
+        }
+
+        async function loadRules() {
+            const res = await fetch(`${API_BASE}/rules`);
+            const rules = await res.json();
+            const tbody = document.getElementById('rules-tbody');
+            tbody.innerHTML = rules.map(r => `
+                <tr class="border-b border-slate-100 hover:bg-slate-50">
+                    <td class="px-5 py-3 font-mono font-bold text-sky-700">${r.rule_code}</td>
+                    <td class="px-5 py-3">
+                        <div class="font-medium text-slate-900">${r.name}</div>
+                        <div class="text-[11px] text-slate-500">${r.category} | ${r.description}</div>
+                    </td>
+                    <td class="px-5 py-3 font-mono text-[11px] text-slate-600">${JSON.stringify(r.thresholds)}</td>
+                    <td class="px-5 py-3">${getSeverityBadge(r.severity)}</td>
+                    <td class="px-5 py-3 font-mono">v${r.version}</td>
+                    <td class="px-5 py-3"><span class="text-emerald-600 font-semibold">Active</span></td>
+                </tr>
+            `).join('');
+        }
+
+        async function loadAuditTrail() {
+            const res = await fetch(`${API_BASE}/audit?page_size=40`);
+            const data = await res.json();
+            const tbody = document.getElementById('audit-tbody');
+            tbody.innerHTML = data.items.map(a => `
+                <tr class="border-b border-slate-100 hover:bg-slate-50">
+                    <td class="px-5 py-2.5 text-slate-400 font-mono">${a.created_at ? a.created_at.substring(11, 19) : ''}</td>
+                    <td class="px-5 py-2.5 font-medium text-slate-800">${a.actor_name || 'SYSTEM'}</td>
+                    <td class="px-5 py-2.5 font-mono text-sky-700 font-bold">${a.action}</td>
+                    <td class="px-5 py-2.5 font-mono text-slate-600">${a.resource_type}:${a.resource_id}</td>
+                    <td class="px-5 py-2.5 text-slate-500 font-mono text-[11px] truncate max-w-xs">${JSON.stringify(a.metadata)}</td>
+                </tr>
+            `).join('');
+        }
+
+        async function triggerScenario(name) {
+            try {
+                const res = await fetch(`${API_BASE}/simulation/scenario/${name}`, { method: 'POST' });
+                const data = await res.json();
+                alert(`Scenario '${name}' injected ${data.events_created} deterministic events into detection engine!`);
+                refreshDashboard();
+            } catch (e) {
+                alert("Scenario execution failed: " + e.message);
+            }
+        }
+
+        function getSeverityBadge(sev) {
+            const s = (sev || 'LOW').toUpperCase();
+            if (s === 'CRITICAL' || s === 'HIGH') return `<span class="bg-red-100 text-red-800 px-2 py-0.5 rounded text-[10px] font-bold">${s}</span>`;
+            if (s === 'MEDIUM' || s === 'ELEVATED') return `<span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-[10px] font-bold">${s}</span>`;
+            return `<span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-[10px] font-bold">${s}</span>`;
+        }
+
+        function getRiskBadge(band) {
+            const b = (band || 'ROUTINE').toUpperCase();
+            if (b === 'HIGH') return '<span class="bg-red-100 text-red-800 px-2 py-0.5 rounded text-[10px] font-bold">HIGH</span>';
+            if (b === 'ELEVATED') return '<span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-[10px] font-bold">ELEVATED</span>';
+            if (b === 'LOW') return '<span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-[10px] font-bold">LOW</span>';
+            return '<span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded text-[10px] font-bold">ROUTINE</span>';
+        }
+
+        // Initialize dashboard on load
+        window.addEventListener('DOMContentLoaded', () => {
+            refreshDashboard();
+        });
+    </script>
+</body>
+</html>
