@@ -2,7 +2,7 @@
 
 # SentinelFlow AI — The Self-Directed Fraud Investigation Platform
 
-[![CI Pipeline](https://github.com/sentinelflow/sentinelflow-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/sentinelflow/sentinelflow-ai/actions)
+[![CI Pipeline](https://github.com/BATMAN300017/HACK-O-WEEN-project/actions/workflows/ci.yml/badge.svg)](https://github.com/BATMAN300017/HACK-O-WEEN-project/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688.svg)](https://fastapi.tiangolo.com)
@@ -65,34 +65,48 @@ flowchart TD
 
 ## 3. Technology Stack
 
-- **Backend**: Python 3.12+, FastAPI, Pydantic v2, Scikit-learn, NumPy, Pandas, SciPy, SQLite3 (with zero-config fallback) and PostgreSQL support.
+- **Backend**: Python 3.11+, FastAPI, Pydantic v2, Scikit-learn, NumPy, Pandas, SciPy, and SQLite. PostgreSQL is not currently implemented.
 - **Security**: PBKDF2-SHA256 password hashing, HMAC bearer tokens, sensitive-field redaction in structured JSON logs.
-- **Frontend / UI**: Embedded Responsive Command Center SPA with Tailwind CSS, SVG radial money-flow graphs, real-time SSE telemetry, and Next.js / TypeScript structure in `frontend/`.
-- **Testing**: Complete automated test suite covering unit rules, anomalies, graph metrics, label policies, integration pipelines, and API endpoints (32 tests passing).
+- **Frontend / UI**: Responsive Next.js / TypeScript dashboard with Tailwind CSS, SVG money-flow graphs, and real-time SSE telemetry in `frontend/`.
+- **Testing**: Backend pytest tests and frontend Vitest tests run in GitHub Actions. Additional detection and workflow coverage remains to be added.
 
 ---
 
 ## 4. Quick Start & Launch
 
 ### Prerequisites
-- Python 3.11+ (installed)
-- Virtual environment (optional but recommended)
+- Python 3.11+, Node.js 20+, and npm
+- A virtual environment is recommended
 
-### 1-Minute Launch
+### Run locally
+In PowerShell, from the repository root:
 ```bash
-# 1. Clone or navigate to the repository
-cd sentinelflow-ai
+# Create and activate a virtual environment
+python -m venv .venv
+.venv\Scripts\Activate.ps1
 
-# 2. Seed the deterministic demo database (100 customers, 150 accounts, 1000 transactions, 30 alerts, 10 cases)
+# Install backend and frontend dependencies
+python -m pip install -e ".[dev]"
+npm ci
+
+# Create local configuration and seed demo data
+Copy-Item .env.example .env
 python scripts/seed_demo_data.py
+```
 
-# 3. Launch the complete application
+Start the backend in one terminal:
+```powershell
 python -m uvicorn app.main:app --app-dir backend --reload --port 8000
 ```
 
-Open your browser at: **[http://localhost:8000/](http://localhost:8000/)** (or `/app`).
+Start the Next.js dashboard from the repository root in a second terminal:
+```powershell
+npm run dev
+```
 
-Interactive Swagger API Documentation: **[http://localhost:8000/docs](http://localhost:8000/docs)**.
+Open the dashboard at **[http://localhost:3000/](http://localhost:3000/)**.
+
+Interactive Swagger API documentation: **[http://localhost:8000/docs](http://localhost:8000/docs)**.
 
 ---
 
@@ -136,27 +150,10 @@ python scripts/run_demo_scenario.py --scenario legitimate_unusual
 
 ## 7. Running Automated Tests
 
-Run the complete 32-test unit and integration suite:
+Run the implemented automated tests from the repository root:
 ```bash
-python backend/tests/run_tests.py
-```
-
-Output:
-```text
-test_alerts_list (integration.test_api.TestAPIEndpoints) ... ok
-test_dashboard_summary (integration.test_api.TestAPIEndpoints) ... ok
-test_full_investigation_lifecycle (integration.test_investigation_workflow) ... ok
-test_idempotent_event_replay_does_not_duplicate (integration.test_transaction_pipeline) ... ok
-test_suspicious_event_creates_alert (integration.test_transaction_pipeline) ... ok
-test_cold_start_reports_low_history_confidence (unit.test_anomaly_detection) ... ok
-test_significant_amount_deviation_detected (unit.test_anomaly_detection) ... ok
-test_high_velocity_rule_triggers_above_threshold (unit.test_detection_rules) ... ok
-test_shortest_path_discovery (unit.test_graph_analysis) ... ok
-test_label_policy_confirmed_fraud_eligible (unit.test_feedback_learning) ... ok
-test_model_promotion_gate_rejects_insufficient_samples (unit.test_feedback_learning) ... ok
-...
-Ran 32 tests in 0.030s
-OK (All tests passed successfully!)
+npm test
+python -m pytest
 ```
 
 ---

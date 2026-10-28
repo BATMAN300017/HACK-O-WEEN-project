@@ -1,9 +1,9 @@
 SentinelFlow AI — Demonstration Script for Judges
 Live Demo Walkthrough (5-Minute Script)
 Step 1: Platform Overview & KPIs (1 Minute)
-Open the application at http://localhost:8000/.
+Open the dashboard at http://localhost:3000/ and the API documentation at http://localhost:8000/docs.
 Observe the Command Center: real-time transaction count, alert velocity, active investigations, and risk calibration tiers (Routine, Low, Elevated, High).
-Point out that all data is dynamically generated from real SQLite/PostgreSQL persistence.
+Point out that demo data is synthetic and persisted in SQLite.
 Step 2: Trigger Scenario A — Rapid Fund Movement (1 Minute)
 In the top navigation bar, click the "Rapid Flow" button (or run python scripts/run_demo_scenario.py --scenario rapid_movement).
 Watch the telemetry update: an incoming wire of $16,500 arrives, followed immediately by a $15,200 transfer to an external LLC.

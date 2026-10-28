@@ -1,34 +1,14 @@
 
 {
-  "name": "sentinelflow-frontend",
-  "version": "1.0.0",
+  "name": "sentinelflow",
   "private": true,
+  "workspaces": [
+    "frontend"
+  ],
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint",
-    "test": "vitest run"
-  },
-  "dependencies": {
-    "next": "14.2.5",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "@tanstack/react-query": "^5.28.0",
-    "lucide-react": "^0.363.0",
-    "recharts": "^2.12.3",
-    "react-flow-renderer": "^10.3.17",
-    "clsx": "^2.1.0",
-    "tailwind-merge": "^2.2.2"
-  },
-  "devDependencies": {
-    "typescript": "^5.4.0",
-    "@types/node": "^20.11.0",
-    "@types/react": "^18.2.0",
-    "@types/react-dom": "^18.2.0",
-    "postcss": "^8.4.38",
-    "tailwindcss": "^3.4.1",
-    "eslint": "^8.57.0",
-    "eslint-config-next": "14.2.5"
+    "dev": "npm run dev --workspace sentinelflow-frontend",
+    "build": "npm run build --workspace sentinelflow-frontend",
+    "lint": "npm run lint --workspace sentinelflow-frontend",
+    "test": "npm run test --workspace sentinelflow-frontend"
   }
 }

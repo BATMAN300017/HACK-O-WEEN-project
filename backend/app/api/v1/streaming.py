@@ -1,11 +1,10 @@
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
-import sqlite3
+from pydantic import BaseModel, Field
 import json
 import asyncio
 import time
-from app.api.dependencies import get_db, require_permission
+from app.api.dependencies import require_permission
 from app.core.permissions import Permission
 from app.services.transaction_simulator import simulation_service
 
@@ -13,7 +12,7 @@ router = APIRouter()
 
 class SimulationStartRequest(BaseModel):
     scenario: str = "NORMAL_OPERATIONS"
-    interval_seconds: float = 1.5
+    interval_seconds: float = Field(default=1.5, gt=0, le=60)
 
 @router.get("/transactions")
 async def stream_live_transactions():
@@ -46,25 +45,37 @@ def get_simulation_status():
     return simulation_service.get_status()
 
 @router.post("/simulation/start")
-def post_start_simulation(req: SimulationStartRequest):
+def post_start_simulation(
+    req: SimulationStartRequest,
+    _: dict = Depends(require_permission(Permission.CONTROL_SIMULATION)),
+):
     simulation_service.start_simulation(scenario=req.scenario, interval_sec=req.interval_seconds)
     return {"message": "Simulation started", "scenario": req.scenario}
 
 @router.post("/simulation/pause")
-def post_pause_simulation():
+def post_pause_simulation(
+    _: dict = Depends(require_permission(Permission.CONTROL_SIMULATION)),
+):
     simulation_service.pause_simulation()
     return {"message": "Simulation paused"}
 
 @router.post("/simulation/resume")
-def post_resume_simulation():
+def post_resume_simulation(
+    _: dict = Depends(require_permission(Permission.CONTROL_SIMULATION)),
+):
     simulation_service.resume_simulation()
     return {"message": "Simulation resumed"}
 
 @router.post("/simulation/reset")
-def post_reset_simulation():
+def post_reset_simulation(
+    _: dict = Depends(require_permission(Permission.CONTROL_SIMULATION)),
+):
     simulation_service.stop_simulation()
     return {"message": "Simulation stopped and reset"}
 
 @router.post("/simulation/scenario/{scenario_name}")
-def post_run_scenario(scenario_name: str):
+def post_run_scenario(
+    scenario_name: str,
+    _: dict = Depends(require_permission(Permission.CONTROL_SIMULATION)),
+):
     return simulation_service.run_named_scenario(scenario_name)

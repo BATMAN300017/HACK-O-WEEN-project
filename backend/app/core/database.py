@@ -10,14 +10,14 @@ _db_lock = threading.Lock()
 
 def get_db_path() -> str:
     url = settings.DATABASE_URL
-    if url.startswith("sqlite:///"):
-        path = url.replace("sqlite:///", "")
-        if path.startswith("./"):
-            # Resolve relative to backend root
-            base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-            path = os.path.join(base_dir, path[2:])
-        return os.path.abspath(path)
-    return os.path.abspath("sentinelflow.db")
+    if not url.startswith("sqlite:///"):
+        raise ValueError("Only SQLite DATABASE_URL values are supported.")
+
+    path = url[10:]
+    if path.startswith("./"):
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        path = os.path.join(base_dir, path[2:])
+    return os.path.abspath(path)
 
 @contextmanager
 def get_db_connection() -> Generator[sqlite3.Connection, None, None]:

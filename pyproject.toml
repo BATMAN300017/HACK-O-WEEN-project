@@ -17,6 +17,7 @@ dependencies = [
     "numpy>=1.26.0",
     "pandas>=2.2.0",
     "scipy>=1.12.0",
+    "python-dotenv>=1.0.0",
 ]
 
 [project.optional-dependencies]
@@ -28,3 +29,10 @@ dev = [
 [tool.pytest.ini_options]
 testpaths = ["backend/tests"]
 pythonpath = ["backend"]
+
+[tool.setuptools]
+package-dir = {"" = "backend"}
+
+[tool.setuptools.packages.find]
+where = ["backend"]
+namespaces = true

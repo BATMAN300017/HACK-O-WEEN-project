@@ -2,23 +2,40 @@
 
 import React, { useEffect, useState } from 'react';
 import { fetchApi } from '@/lib/api-client';
-import { formatCurrency } from '@/lib/formatters';
 import Link from 'next/link';
+import type { Alert } from '@/types/alert';
+
+interface DashboardSummary {
+  transactions_processed: number;
+  transactions_per_minute: number;
+  alerts_generated: number;
+  open_investigations: number;
+  high_priority_cases: number;
+  verified_false_positive_rate: number;
+  confirmed_fraud_count: number;
+}
+
+interface AlertListResponse {
+  items: Alert[];
+}
 
 export default function DashboardPage() {
-  const [kpis, setKpis] = useState<any>(null);
-  const [recentAlerts, setRecentAlerts] = useState<any[]>([]);
+  const [kpis, setKpis] = useState<DashboardSummary | null>(null);
+  const [recentAlerts, setRecentAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadData() {
       try {
-        const summary = await fetchApi<any>('/dashboard/summary');
+        const [summary, alerts] = await Promise.all([
+          fetchApi<DashboardSummary>('/dashboard/summary'),
+          fetchApi<AlertListResponse>('/alerts?page_size=5'),
+        ]);
         setKpis(summary);
-        const alerts = await fetchApi<any>('/alerts?page_size=5');
-        setRecentAlerts(alerts.items || []);
+        setRecentAlerts(alerts.items);
       } catch (err) {
-        console.error(err);
+        setError(err instanceof Error ? err.message : 'Unable to load dashboard data.');
       } finally {
         setLoading(false);
       }
@@ -35,13 +52,17 @@ export default function DashboardPage() {
 
       {loading ? (
         <div className="text-center py-12 text-slate-400">Loading telemetry...</div>
+      ) : error ? (
+        <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-6 text-red-700">
+          Unable to load dashboard data: {error}
+        </div>
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
               <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Transactions Processed</div>
               <div className="text-3xl font-bold text-slate-900 mt-2">{kpis?.transactions_processed?.toLocaleString()}</div>
-              <div className="text-xs text-emerald-600 font-medium mt-1">42.5 TPM throughput</div>
+              <div className="text-xs text-emerald-600 font-medium mt-1">{kpis?.transactions_per_minute.toFixed(1)} TPM throughput</div>
             </div>
             <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
               <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Alerts Generated</div>

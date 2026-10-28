@@ -50,7 +50,7 @@ export interface EvidenceItem {
   investigation_id: string;
   evidence_type: string;
   description: string;
-  observed_facts: Record<string, any>;
+  observed_facts: Record<string, unknown>;
   verification_status: string;
   collector: string;
   integrity_hash?: string;

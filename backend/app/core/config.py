@@ -1,6 +1,27 @@
 import os
 from typing import List
+from dotenv import load_dotenv
 from pydantic import BaseModel
+
+load_dotenv()
+
+DEVELOPMENT_SECRET_KEY = "sentinelflow_super_secret_demo_key_9874123"
+
+
+def validate_production_secret_key(environment: str, secret_key: str) -> None:
+    if environment.lower() in ("development", "test"):
+        return
+
+    normalized_key = secret_key.strip()
+    if (
+        len(normalized_key) < 32
+        or normalized_key == DEVELOPMENT_SECRET_KEY
+        or normalized_key.startswith("replace-this")
+    ):
+        raise RuntimeError(
+            "Set a unique SECRET_KEY of at least 32 characters before running outside development or test."
+        )
+
 
 class Settings(BaseModel):
     PROJECT_NAME: str = "SentinelFlow AI — The Self-Directed Fraud Investigation Platform"
@@ -13,11 +34,11 @@ class Settings(BaseModel):
     PORT: int = int(os.getenv("PORT", "8000"))
     HOST: str = os.getenv("HOST", "0.0.0.0")
     
-    # Database URL: default SQLite with path resolution, or PostgreSQL
+    # SQLite is the only database backend currently implemented.
     DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./sentinelflow.db")
     
     # Security & Auth
-    SECRET_KEY: str = os.getenv("SECRET_KEY", "sentinelflow_super_secret_demo_key_9874123")
+    SECRET_KEY: str = os.getenv("SECRET_KEY", DEVELOPMENT_SECRET_KEY)
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "480"))
     ALGORITHM: str = "HS256"
     
