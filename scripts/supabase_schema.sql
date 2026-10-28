@@ -239,11 +239,19 @@ VALUES ('evidence-files', 'evidence-files', true)
 ON CONFLICT (id) DO NOTHING;
 
 -- Storage RLS policy allowing authenticated and service access
-CREATE POLICY "Allow public read of evidence files" ON storage.objects
-FOR SELECT USING (bucket_id = 'evidence-files');
-
-CREATE POLICY "Allow service uploads to evidence files" ON storage.objects
-FOR INSERT WITH CHECK (bucket_id = 'evidence-files');
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE schemaname = 'storage' AND tablename = 'objects' AND policyname = 'Allow public read of evidence files'
+    ) THEN
+        CREATE POLICY "Allow public read of evidence files" ON storage.objects FOR SELECT USING (bucket_id = 'evidence-files');
+    END IF;
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE schemaname = 'storage' AND tablename = 'objects' AND policyname = 'Allow service uploads to evidence files'
+    ) THEN
+        CREATE POLICY "Allow service uploads to evidence files" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'evidence-files');
+    END IF;
+END $$;
 
 -- =========================================================================
 -- SEED DEFAULT USERS (Guarantees authentication and foreign keys succeed)
