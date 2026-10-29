@@ -16,40 +16,6 @@ In modern financial crime and anti-money laundering (AML) operations, over 90% o
 
 SentinelFlow AI transforms the investigative process through four foundational pillars:
 
-```mermaid
-flowchart TD
-    subgraph Surveillance["1. Continuous Surveillance"]
-        T[Transaction Ingestion] --> IDEM[Idempotency Check]
-        IDEM --> DB[(Persistent Store)]
-    end
-
-    subgraph Detection["2. Hybrid Multi-Signal Engine"]
-        DB --> RULES[Explainable Rules (30%)]
-        DB --> ANOM[Account Rolling MAD Baseline (25%)]
-        DB --> ML[Supervised Logistic Regression (25%)]
-        DB --> GRAPH[Graph Topology Signals (20%)]
-        RULES & ANOM & ML & GRAPH --> ENS[Calibrated Risk Ensemble (0-100)]
-    end
-
-    subgraph Agent["3. Self-Directed Investigation Agent"]
-        ENS -->|Risk >= 70| ORCH[13-Step Automated Orchestrator]
-        ORCH --> EVD[Typed Evidence Generation (SHA-256 Hash)]
-        ORCH --> SUBG[Multi-Hop Counterparty Sub-Graph]
-        ORCH --> CHK[Procedural Playbook Checklist]
-        ORCH --> COPILOT[Evidence-Grounded AI Copilot]
-    end
-
-    subgraph Governance["4. Human-In-The-Loop Learning"]
-        CHK & EVD --> CASE[Analyst Workbench]
-        CASE --> DISP[Audited Disposition]
-        DISP --> PEER[Senior Peer Review Gate]
-        PEER --> POLICY[Controlled Label Policy]
-        POLICY --> CAND[Candidate Model Training & Holdout Gate]
-        CAND --> PROMO[Admin Promotion]
-    end
-```
-
----
 
 ## 2. Differentiators
 
