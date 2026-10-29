@@ -59,6 +59,7 @@ Open your browser at: **[http://localhost:8000/](http://localhost:8000/)** (or `
 Interactive Swagger API Documentation: **[http://localhost:8000/docs](http://localhost:8000/docs)**.
 
 ---
+I will soon deploy this in a website, till then you can run it on your local computer
 
 ## 5. Development Credentials for Local Demo
 
@@ -97,6 +98,7 @@ python scripts/run_demo_scenario.py --scenario legitimate_unusual
 - Flagged with low anomaly confidence, allowing the analyst to verify and close as `LEGITIMATE_ACTIVITY`, contributing to false-positive reduction.
 
 ---
+There are 4 contributors which contributes to final result of a transaction. above 4 scenarios are from contributor 1 which holds 30% power in the main result.
 
 ## 7. Running Automated Tests
 
