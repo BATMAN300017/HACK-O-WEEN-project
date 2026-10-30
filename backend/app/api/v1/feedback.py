@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
+from typing import Optional
 import sqlite3
 from app.api.dependencies import get_db, get_current_user, require_permission
 from app.core.permissions import Permission
@@ -64,3 +65,42 @@ def post_rollback_model(
     db: sqlite3.Connection = Depends(get_db)
 ):
     return execute_model_rollback(db, current_user.get("full_name", "Fraud Ops Admin"))
+
+
+@router.get("/labeled-transactions", summary="Fetch Dataset 2 labeled transactions for feedback learning")
+def get_labeled_transactions(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=100),
+    label_filter: Optional[str] = None, # SCAM, LEGIT, or ALL
+    db: sqlite3.Connection = Depends(get_db)
+):
+    offset = (page - 1) * page_size
+    query = """
+        SELECT f.id, f.investigation_id, f.disposition, f.rationale,
+               f.is_eligible_for_training, f.training_label, f.created_at,
+               i.case_number, i.title, i.priority
+        FROM analyst_feedback f
+        LEFT JOIN investigations i ON f.investigation_id = i.id
+        WHERE 1=1
+    """
+    params = []
+    if label_filter == "SCAM":
+        query += " AND f.training_label = 1"
+    elif label_filter == "LEGIT":
+        query += " AND f.training_label = 0"
+
+    cursor = db.cursor()
+    cursor.execute(f"SELECT COUNT(*) FROM ({query})", params)
+    total = cursor.fetchone()[0]
+
+    query += " ORDER BY f.created_at DESC LIMIT ? OFFSET ?"
+    params.extend([page_size, offset])
+    cursor.execute(query, params)
+    rows = [dict(r) for r in cursor.fetchall()]
+
+    return {
+        "items": rows,
+        "total": total,
+        "page": page,
+        "page_size": page_size
+    }

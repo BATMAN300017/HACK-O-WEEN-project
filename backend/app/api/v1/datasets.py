@@ -46,6 +46,54 @@ def list_datasets():
     """Returns registration metadata, transaction counts, and label isolation health."""
     return DatasetRegistry.get_all_registered_datasets()
 
+@router.get("/transactions", summary="Browse and explore all transaction data across datasets")
+def browse_dataset_transactions(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=200),
+    dataset_source: Optional[str] = None,
+    currency: Optional[str] = None,
+    search: Optional[str] = None,
+    conn=Depends(get_db)
+):
+    offset = (page - 1) * page_size
+    query = """
+        SELECT id, event_id, source_account_id, destination_account_id,
+               amount, currency, transaction_type, payment_channel, status,
+               risk_score, risk_band, dataset_source, created_at
+        FROM transactions
+        WHERE 1=1
+    """
+    params = []
+    if dataset_source and dataset_source.upper() != "ALL":
+        query += " AND dataset_source = ?"
+        params.append(dataset_source.upper())
+    if currency and currency.upper() != "ALL":
+        query += " AND currency = ?"
+        params.append(currency.upper())
+    if search:
+        query += " AND (id LIKE ? OR source_account_id LIKE ? OR destination_account_id LIKE ?)"
+        term = f"%{search}%"
+        params.extend([term, term, term])
+
+    count_query = f"SELECT COUNT(*) FROM ({query})"
+    cursor = conn.cursor()
+    cursor.execute(count_query, params)
+    total = cursor.fetchone()[0]
+
+    query += " ORDER BY created_at DESC LIMIT ? OFFSET ?"
+    params.extend([page_size, offset])
+    cursor.execute(query, params)
+    rows = [dict(r) for r in cursor.fetchall()]
+
+    return {
+        "items": rows,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": (total + page_size - 1) // page_size if page_size > 0 else 1
+    }
+
+
 @router.get("/rbi-npci-benchmarks", summary="Retrieve official RBI & NPCI aggregate payment indicators")
 def get_rbi_npci_benchmarks():
     """Returns official calibrated macro payment benchmarks used to parameterize Indian simulations."""

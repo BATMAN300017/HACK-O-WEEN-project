@@ -192,10 +192,7 @@
                     <span class="material-symbols-outlined text-[18px] group-hover:text-primary">psychology</span>
                     <span>Feedback & Learning</span>
                 </button>
-                <button onclick="switchView('rules')" id="nav-rules" class="w-full text-left text-text-secondary hover:text-text-primary hover:bg-surface-variant font-mono text-xs px-3 py-2.5 rounded flex items-center gap-2.5 transition-colors group">
-                    <span class="material-symbols-outlined text-[18px] group-hover:text-primary">tune</span>
-                    <span>Detection Rules</span>
-                </button>
+
                 <button onclick="switchView('audit')" id="nav-audit" class="w-full text-left text-text-secondary hover:text-text-primary hover:bg-surface-variant font-mono text-xs px-3 py-2.5 rounded flex items-center gap-2.5 transition-colors group">
                     <span class="material-symbols-outlined text-[18px] group-hover:text-primary">history</span>
                     <span>Audit Trail</span>
@@ -747,6 +744,44 @@
                     </div>
                 </div>
 
+                                <!-- DATASET 2: LABELED GROUND TRUTH (SCAM VS LEGIT) -->
+                <div class="bg-surface-card rounded-xl border border-surface-border p-5 space-y-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-surface-border pb-3">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 text-[10px] font-mono bg-status-warning/10 text-status-warning border border-status-warning/30 rounded font-bold">DATASET 2: NFPC MULE GROUND TRUTH</span>
+                                <h3 class="text-sm font-bold text-text-primary">Human-Verified Training Corpus (Scam vs Legit)</h3>
+                            </div>
+                            <p class="text-xs text-text-secondary mt-0.5">Transactions from Dataset 2 with definitive labels (1 = Scam / Confirmed Fraud, 0 = Legit / False Positive) powering continuous learning.</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="loadLabeledFeed('ALL')" class="px-2.5 py-1 bg-surface-base hover:bg-surface-elevated text-xs font-mono rounded border border-surface-border text-text-primary font-semibold">All</button>
+                            <button onclick="loadLabeledFeed('SCAM')" class="px-2.5 py-1 bg-status-critical/10 hover:bg-status-critical/20 text-xs font-mono rounded border border-status-critical/30 text-status-critical font-bold">Scam (1)</button>
+                            <button onclick="loadLabeledFeed('LEGIT')" class="px-2.5 py-1 bg-status-success/10 hover:bg-status-success/20 text-xs font-mono rounded border border-status-success/30 text-status-success font-bold">Legit (0)</button>
+                        </div>
+                    </div>
+
+                    <!-- Labeled Table -->
+                    <div class="overflow-x-auto border border-surface-border rounded-lg">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead class="bg-surface-base text-[11px] font-mono text-text-muted border-b border-surface-border">
+                                <tr>
+                                    <th class="px-4 py-2.5">Feedback ID</th>
+                                    <th class="px-4 py-2.5">Case Reference</th>
+                                    <th class="px-4 py-2.5">Ground-Truth Verdict</th>
+                                    <th class="px-4 py-2.5">Label (ML Target)</th>
+                                    <th class="px-4 py-2.5">Investigative Rationale</th>
+                                    <th class="px-4 py-2.5">Training Status</th>
+                                    <th class="px-4 py-2.5">Disposed At</th>
+                                </tr>
+                            </thead>
+                            <tbody id="labeled-feed-tbody" class="divide-y divide-surface-border text-text-secondary font-mono text-[11px]">
+                                <tr><td colspan="7" class="px-4 py-6 text-center text-text-muted">Loading labeled training samples...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
                 <div class="bg-surface-card p-6 rounded-xl border border-surface-border space-y-3">
                     <h2 class="text-sm font-semibold text-text-primary">Platform Label Policy (Responsible AI Safeguard)</h2>
                     <p class="text-xs text-text-secondary">To prevent model degradation and feedback loops, SentinelFlow AI enforces a strict label policy:</p>
@@ -768,34 +803,6 @@
             </div>
 
             <!-- SECTION 8: DETECTION RULES -->
-            <div id="view-rules" class="space-y-4 hidden">
-                <div class="flex items-center justify-between pb-2 border-b border-surface-border">
-                    <div>
-                        <h1 class="text-2xl font-bold text-text-primary tracking-tight">Configurable Detection Rules</h1>
-                        <p class="text-xs text-text-secondary mt-0.5">Versioned rules with historical immutability and What-If simulation support.</p>
-                    </div>
-                    <button onclick="loadRules()" class="px-3 py-1.5 bg-primary text-surface-base font-mono text-xs font-bold rounded hover:bg-primary/90 transition shadow-sm">Refresh Rules</button>
-                </div>
-                <div class="bg-surface-card rounded-lg border border-surface-border overflow-hidden">
-                    <table class="w-full text-left text-xs border-collapse">
-                        <thead class="bg-surface-base/80 text-[11px] font-mono text-text-muted tracking-wider border-b border-surface-border">
-                            <tr>
-                                <th class="px-5 py-3">Rule Code</th>
-                                <th class="px-5 py-3">Rule Name & Category</th>
-                                <th class="px-5 py-3">Active Thresholds</th>
-                                <th class="px-5 py-3">Severity</th>
-                                <th class="px-5 py-3">Version</th>
-                                <th class="px-5 py-3">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="rules-tbody" class="divide-y divide-surface-border text-text-secondary">
-                            <tr><td colspan="6" class="px-5 py-6 text-center text-text-muted">Loading rules...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- SECTION 9: AUDIT TRAIL -->
             <div id="view-audit" class="space-y-4 hidden">
                 <div class="flex items-center justify-between pb-2 border-b border-surface-border">
                     <div>
@@ -824,82 +831,113 @@
 
         
             <!-- SECTION 10: DATASET MANAGEMENT -->
+                        <!-- SECTION 10: DATASET MANAGEMENT & TRANSACTION BROWSER -->
             <div id="view-datasets" class="space-y-5 hidden">
-                <div class="flex items-center justify-between pb-2 border-b border-surface-border">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-surface-border">
                     <div>
-                        <h1 class="text-2xl font-bold text-text-primary tracking-tight">Dataset Management & Macro Calibration</h1>
-                        <p class="text-xs text-text-secondary mt-0.5">SAML-D benchmark, NFPC mule dataset, and RBI/NPCI calibrated Indian banking simulation with strict label isolation.</p>
+                        <h1 class="text-2xl font-bold text-text-primary tracking-tight">Dataset Management & Transaction Explorer</h1>
+                        <p class="text-xs text-text-secondary mt-0.5">Explore ingested transactions across SAML-D and NFPC with multi-currency routing and strict label isolation.</p>
                     </div>
-                    <button onclick="loadDatasetManagement()" class="px-3 py-1.5 bg-primary text-surface-base font-mono text-xs font-bold rounded hover:bg-primary/90 transition shadow-sm">Refresh Datasets</button>
-                </div>
-
-                <!-- Three Primary Datasets Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="datasets-cards-grid">
-                    <div class="p-4 bg-surface-card rounded-xl border border-surface-border text-center text-text-muted">Loading datasets registry...</div>
-                </div>
-
-                <!-- Simulation & Macro Calibration Controls -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                    <!-- India Simulator Control Panel -->
-                    <div class="bg-surface-card rounded-xl border border-surface-border p-5 space-y-4">
-                        <div class="flex items-center justify-between">
-                            <h3 class="text-sm font-bold text-text-primary flex items-center gap-2">
-                                <span class="material-symbols-outlined text-primary text-[18px]">currency_rupee</span>
-                                Calibrated Indian Banking Simulator
-                            </h3>
-                            <span class="px-2 py-0.5 text-[10px] font-mono bg-status-success/10 text-status-success border border-status-success/30 rounded">RBI/NPCI Calibrated</span>
-                        </div>
-                        <p class="text-xs text-text-secondary leading-relaxed">
-                            Generates realistic domestic INR payment flows (UPI, IMPS, NEFT, RTGS) coupled with 5 coordinated crime topologies (Domestic Mule Chain, International Layering to UAE/UK, Split-Merge networks, Circular loops, and Legitimate lookalikes).
-                        </p>
-                        <div class="grid grid-cols-3 gap-3">
-                            <div class="bg-surface-base p-2.5 rounded border border-surface-border">
-                                <span class="text-[10px] font-mono text-text-muted">Customers</span>
-                                <input id="sim-input-cust" type="number" value="50" class="w-full bg-transparent font-mono text-sm text-text-primary font-bold focus:outline-none mt-1">
-                            </div>
-                            <div class="bg-surface-base p-2.5 rounded border border-surface-border">
-                                <span class="text-[10px] font-mono text-text-muted">Accounts</span>
-                                <input id="sim-input-acc" type="number" value="80" class="w-full bg-transparent font-mono text-sm text-text-primary font-bold focus:outline-none mt-1">
-                            </div>
-                            <div class="bg-surface-base p-2.5 rounded border border-surface-border">
-                                <span class="text-[10px] font-mono text-text-muted">Normal Txns</span>
-                                <input id="sim-input-txns" type="number" value="250" class="w-full bg-transparent font-mono text-sm text-text-primary font-bold focus:outline-none mt-1">
-                            </div>
-                        </div>
-                        <button onclick="triggerIndiaSimulation()" id="btn-trigger-sim" class="w-full py-2.5 bg-primary text-surface-base font-mono text-xs font-bold rounded-lg hover:bg-primary/90 transition flex items-center justify-center gap-2 shadow-sm">
-                            <span class="material-symbols-outlined text-[16px]">play_circle</span>
-                            <span>Generate & Ingest Calibrated Ecosystem</span>
+                    <div class="flex items-center gap-3">
+                        <button onclick="loadDatasetTransactions()" class="px-3 py-1.5 bg-primary text-surface-base font-mono text-xs font-bold rounded hover:bg-primary/90 transition shadow-sm flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-[15px]">refresh</span>
+                            <span>Refresh Data</span>
                         </button>
                     </div>
+                </div>
 
-                    <!-- Macro Indicators Benchmark -->
-                    <div class="bg-surface-card rounded-xl border border-surface-border p-5 space-y-3">
-                        <h3 class="text-sm font-bold text-text-primary flex items-center gap-2">
-                            <span class="material-symbols-outlined text-status-warning text-[18px]">account_balance</span>
-                            Official RBI & NPCI Payment Indicators
-                        </h3>
-                        <p class="text-xs text-text-secondary">Official monthly macro aggregates used to parameterize distribution shapes (log-normal, Pareto) for Indian transaction channels.</p>
-                        <div class="max-h-48 overflow-y-auto border border-surface-border rounded">
-                            <table class="w-full text-left text-xs">
-                                <thead class="bg-surface-base text-[10px] font-mono text-text-muted sticky top-0">
-                                    <tr>
-                                        <th class="px-3 py-2">Channel</th>
-                                        <th class="px-3 py-2">Monthly Vol (M)</th>
-                                        <th class="px-3 py-2">Avg Ticket (INR)</th>
-                                        <th class="px-3 py-2">Market Share</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="benchmarks-tbody" class="divide-y divide-surface-border text-text-secondary text-[11px] font-mono">
-                                    <tr><td colspan="4" class="px-3 py-4 text-center text-text-muted">Loading benchmarks...</td></tr>
-                                </tbody>
-                            </table>
+                <!-- Dataset Status Summary Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-surface-card rounded-xl border border-surface-border p-4 flex items-center justify-between">
+                        <div class="space-y-1">
+                            <span class="px-2 py-0.5 text-[10px] font-mono bg-primary/10 text-primary border border-primary/20 rounded font-bold">DATASET 1: SAML-D</span>
+                            <h3 class="text-sm font-bold text-text-primary">Synthetic AML Monitoring Dataset</h3>
+                            <p class="text-[11px] text-text-secondary font-mono">Role: Unsupervised Development & Detection Stream (USD, EUR, GBP, AED, INR, SGD)</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xl font-bold font-mono text-primary" id="saml-count-badge">400</span>
+                            <span class="text-[10px] font-mono text-text-muted block">Active Records</span>
+                        </div>
+                    </div>
+                    <div class="bg-surface-card rounded-xl border border-surface-border p-4 flex items-center justify-between">
+                        <div class="space-y-1">
+                            <span class="px-2 py-0.5 text-[10px] font-mono bg-status-warning/10 text-status-warning border border-status-warning/20 rounded font-bold">DATASET 2: NFPC MULE</span>
+                            <h3 class="text-sm font-bold text-text-primary">Mule Account Labeled Dataset</h3>
+                            <p class="text-[11px] text-text-secondary font-mono">Role: Governed Feedback & Continuous Learning (Ground Truth: Scam vs Legit)</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xl font-bold font-mono text-status-warning" id="nfpc-count-badge">50</span>
+                            <span class="text-[10px] font-mono text-text-muted block">Labeled Records</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Transaction Browser Table -->
+                <div class="bg-surface-card rounded-xl border border-surface-border overflow-hidden">
+                    <!-- Filters & Search Toolbar -->
+                    <div class="p-4 border-b border-surface-border flex flex-col md:flex-row items-center justify-between gap-3 bg-surface-base/50">
+                        <div class="flex items-center gap-2 w-full md:w-auto">
+                            <div class="relative w-full md:w-64">
+                                <span class="material-symbols-outlined absolute left-2.5 top-2 text-[16px] text-text-muted">search</span>
+                                <input id="ds-search-input" type="text" placeholder="Search by Txn ID or Account..." onkeyup="if(event.key==='Enter') loadDatasetTransactions()" class="w-full pl-8 pr-3 py-1.5 bg-surface-base border border-surface-border rounded text-xs font-mono text-text-primary focus:outline-none focus:border-primary">
+                            </div>
+                            <button onclick="loadDatasetTransactions()" class="px-3 py-1.5 bg-surface-variant hover:bg-surface-elevated text-text-primary font-mono text-xs rounded border border-surface-border">
+                                Filter
+                            </button>
+                        </div>
+
+                        <div class="flex items-center gap-2 self-end">
+                            <select id="ds-filter-source" onchange="loadDatasetTransactions()" class="bg-surface-base border border-surface-border text-text-primary text-xs font-mono rounded px-2.5 py-1.5 focus:outline-none">
+                                <option value="ALL">All Datasets</option>
+                                <option value="SAML_D" selected>Dataset 1: SAML-D</option>
+                                <option value="NFPC_MULE">Dataset 2: NFPC</option>
+                            </select>
+                            <select id="ds-filter-curr" onchange="loadDatasetTransactions()" class="bg-surface-base border border-surface-border text-text-primary text-xs font-mono rounded px-2.5 py-1.5 focus:outline-none">
+                                <option value="ALL">All Currencies</option>
+                                <option value="USD">USD</option>
+                                <option value="EUR">EUR</option>
+                                <option value="GBP">GBP</option>
+                                <option value="AED">AED</option>
+                                <option value="INR">INR</option>
+                                <option value="SGD">SGD</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Live Transactions Data Table -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead class="bg-surface-base text-[11px] font-mono text-text-muted tracking-wider border-b border-surface-border">
+                                <tr>
+                                    <th class="px-4 py-3">Transaction ID</th>
+                                    <th class="px-4 py-3">Source Account</th>
+                                    <th class="px-4 py-3">Destination Account</th>
+                                    <th class="px-4 py-3">Amount & Currency</th>
+                                    <th class="px-4 py-3">Channel / Type</th>
+                                    <th class="px-4 py-3">Risk Band</th>
+                                    <th class="px-4 py-3">Dataset</th>
+                                    <th class="px-4 py-3">Timestamp</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ds-transactions-tbody" class="divide-y divide-surface-border text-text-secondary font-mono text-[11px]">
+                                <tr><td colspan="8" class="px-4 py-8 text-center text-text-muted">Loading dataset transactions...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination Footer -->
+                    <div class="p-3 bg-surface-base/80 border-t border-surface-border flex items-center justify-between text-xs font-mono text-text-muted">
+                        <span id="ds-pagination-info">Showing records 1 - 50</span>
+                        <div class="flex items-center gap-2">
+                            <button id="ds-prev-btn" onclick="changeDsPage(-1)" class="px-2.5 py-1 bg-surface-card hover:bg-surface-variant rounded border border-surface-border disabled:opacity-50" disabled>Previous</button>
+                            <span id="ds-current-page" class="font-bold text-text-primary px-2">Page 1</span>
+                            <button id="ds-next-btn" onclick="changeDsPage(1)" class="px-2.5 py-1 bg-surface-card hover:bg-surface-variant rounded border border-surface-border disabled:opacity-50">Next</button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- SECTION 11: FUND FLOW INVESTIGATION -->
-            <div id="view-fundflow" class="space-y-5 hidden">
+<div id="view-fundflow" class="space-y-5 hidden">
                 <div class="flex items-center justify-between pb-2 border-b border-surface-border">
                     <div>
                         <h1 class="text-2xl font-bold text-text-primary tracking-tight">Fund Flow Reconstruction & Multi-Hop Tracing</h1>
@@ -1153,7 +1191,7 @@
         let currentScamDossier = null;
 
         function switchView(viewId) {
-            const views = ['overview', 'datasets', 'fundflow', 'evaluation', 'transactions', 'alerts', 'investigations', 'case-detail', 'network', 'learning', 'rules', 'audit'];
+            const views = ['overview', 'datasets', 'fundflow', 'evaluation', 'transactions', 'alerts', 'investigations', 'case-detail', 'network', 'learning', 'audit'];
             views.forEach(v => {
                 const el = document.getElementById('view-' + v);
                 const nav = document.getElementById('nav-' + v);
@@ -1184,7 +1222,7 @@
             if (viewId === 'alerts') loadAlerts();
             if (viewId === 'investigations') loadInvestigations();
             if (viewId === 'network') loadNetworkIntelligence();
-            if (viewId === 'learning') loadLearningStatus();
+            if (viewId === 'learning') loadLearningStatus(); loadLabeledFeed();
             if (viewId === 'rules') loadRules();
             if (viewId === 'audit') loadAuditTrail();
         }
@@ -2023,6 +2061,103 @@
             }
         }
 
+        
+        // ================= DATASET TRANSACTIONS BROWSER LOGIC =================
+        let dsCurrentPage = 1;
+
+        async function loadDatasetManagement() {
+            loadDatasetTransactions();
+        }
+
+        async function loadDatasetTransactions() {
+            const tbody = document.getElementById('ds-transactions-tbody');
+            tbody.innerHTML = `<tr><td colspan="8" class="px-4 py-6 text-center text-text-muted font-mono text-xs animate-pulse">Loading transaction records...</td></tr>`;
+            try {
+                const search = document.getElementById('ds-search-input') ? document.getElementById('ds-search-input').value : '';
+                const source = document.getElementById('ds-filter-source') ? document.getElementById('ds-filter-source').value : 'ALL';
+                const curr = document.getElementById('ds-filter-curr') ? document.getElementById('ds-filter-curr').value : 'ALL';
+
+                const url = `${API_BASE}/datasets/transactions?page=${dsCurrentPage}&page_size=50&dataset_source=${source}&currency=${curr}&search=${encodeURIComponent(search)}`;
+                const res = await fetch(url);
+                const data = await res.json();
+
+                if (!data.items || data.items.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="8" class="px-4 py-6 text-center text-text-muted font-mono text-xs">No transactions match the selected criteria.</td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = data.items.map(t => {
+                    const bandColor = t.risk_band === 'HIGH' ? 'bg-status-critical/10 text-status-critical border border-status-critical/30' :
+                                      t.risk_band === 'ELEVATED' ? 'bg-status-warning/10 text-status-warning border border-status-warning/30' :
+                                      'bg-surface-variant text-text-muted border border-surface-border';
+                    return `
+                        <tr class="hover:bg-surface-elevated/40 transition">
+                            <td class="px-4 py-2.5 font-bold text-text-primary">${t.id}</td>
+                            <td class="px-4 py-2.5 text-primary">${t.source_account_id}</td>
+                            <td class="px-4 py-2.5">${t.destination_account_id || '--'}</td>
+                            <td class="px-4 py-2.5 font-bold text-text-primary">${t.currency} ${Number(t.amount).toLocaleString()}</td>
+                            <td class="px-4 py-2.5 text-text-muted">${t.payment_channel || 'TRANSFER'}</td>
+                            <td class="px-4 py-2.5"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${bandColor}">${t.risk_band} (${t.risk_score})</span></td>
+                            <td class="px-4 py-2.5"><span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-primary/10 text-primary border border-primary/20">${t.dataset_source}</span></td>
+                            <td class="px-4 py-2.5 text-text-muted">${(t.created_at || '').replace('T', ' ').slice(0, 19)}</td>
+                        </tr>
+                    `;
+                }).join('');
+
+                document.getElementById('ds-pagination-info').innerText = `Showing records ${(dsCurrentPage - 1) * 50 + 1} - ${Math.min(dsCurrentPage * 50, data.total)} of ${data.total} total`;
+                document.getElementById('ds-current-page').innerText = `Page ${data.page} of ${data.total_pages}`;
+                document.getElementById('ds-prev-btn').disabled = data.page <= 1;
+                document.getElementById('ds-next-btn').disabled = data.page >= data.total_pages;
+
+                if (document.getElementById('saml-count-badge')) {
+                    document.getElementById('saml-count-badge').innerText = data.total;
+                }
+            } catch(e) {
+                tbody.innerHTML = `<tr><td colspan="8" class="px-4 py-6 text-center text-status-critical font-mono text-xs">Error loading transactions: ${e}</td></tr>`;
+            }
+        }
+
+        function changeDsPage(delta) {
+            dsCurrentPage = Math.max(1, dsCurrentPage + delta);
+            loadDatasetTransactions();
+        }
+
+        // ================= LABELED FEED (DATASET 2) LOGIC =================
+        async function loadLabeledFeed(filter = 'ALL') {
+            const tbody = document.getElementById('labeled-feed-tbody');
+            if (!tbody) return;
+            tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-6 text-center text-text-muted font-mono text-xs animate-pulse">Loading Dataset 2 labeled records...</td></tr>`;
+            try {
+                const res = await fetch(`${API_BASE}/feedback/labeled-transactions?label_filter=${filter}`);
+                const data = await res.json();
+                if (!data.items || data.items.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-6 text-center text-text-muted font-mono text-xs">No labeled records found.</td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = data.items.map(r => {
+                    const isScam = r.training_label === 1;
+                    const labelBadge = isScam
+                        ? `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-status-critical/10 text-status-critical border border-status-critical/30">SCAM [1]</span>`
+                        : `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-status-success/10 text-status-success border border-status-success/30">LEGIT [0]</span>`;
+
+                    return `
+                        <tr class="hover:bg-surface-elevated/40 transition">
+                            <td class="px-4 py-2.5 font-bold text-text-primary">${r.id}</td>
+                            <td class="px-4 py-2.5 text-primary">${r.case_number || r.investigation_id}</td>
+                            <td class="px-4 py-2.5 font-bold text-text-primary">${r.disposition.replace('_', ' ')}</td>
+                            <td class="px-4 py-2.5">${labelBadge}</td>
+                            <td class="px-4 py-2.5 text-text-secondary max-w-[280px] truncate" title="${r.rationale}">${r.rationale}</td>
+                            <td class="px-4 py-2.5"><span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-status-success/10 text-status-success">ELIGIBLE</span></td>
+                            <td class="px-4 py-2.5 text-text-muted">${(r.created_at || '').replace('T', ' ').slice(0, 19)}</td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch(e) {
+                tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-6 text-center text-status-critical font-mono text-xs">Error: ${e}</td></tr>`;
+            }
+        }
+
         async function loadLearningStatus() {
             const res = await fetch(`${API_BASE}/learning/status`);
             const data = await res.json();
@@ -2038,14 +2173,14 @@
             const res = await fetch(`${API_BASE}/learning/train-candidate`, { method: 'POST' });
             const data = await res.json();
             alert(data.message || data.eval_report?.reason || "Candidate training executed.");
-            loadLearningStatus();
+            loadLearningStatus(); loadLabeledFeed();
         }
 
         async function triggerPromoteCandidate() {
             const res = await fetch(`${API_BASE}/learning/promote-candidate`, { method: 'POST' });
             const data = await res.json();
             alert(data.message);
-            loadLearningStatus();
+            loadLearningStatus(); loadLabeledFeed();
         }
 
         async function loadRules() {

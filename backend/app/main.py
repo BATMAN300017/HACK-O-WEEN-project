@@ -59,9 +59,9 @@ def on_startup():
             cursor.execute("SELECT COUNT(*) FROM transactions")
             count = cursor.fetchone()[0]
             if count == 0:
-                logger.info("Fresh database detected. Auto-seeding initial demo records...")
-                from scripts.seed_demo_data import seed_demo_database
-                seed_demo_database()
+                logger.info("Fresh database detected. Auto-seeding initial records with SAML-D & NFPC datasets...")
+                from scripts.seed_saml_and_nfpc import seed_saml_and_nfpc_database
+                seed_saml_and_nfpc_database()
             else:
                 logger.info(f"Database contains {count} transactions. Ready.")
     except Exception as e:

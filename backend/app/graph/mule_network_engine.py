@@ -132,49 +132,52 @@ class MuleNetworkEngine:
     def discover_multi_hop_chains(self, min_hops: int = 2, max_hops: int = 6) -> List[Dict[str, Any]]:
         """
         Finds directed linear paths where funds move across multiple intermediary mule accounts.
+        Evaluates weakly connected components to scale efficiently across large disjoint transaction graphs.
         """
         chains = []
-        # Find paths of length min_hops to max_hops
         simple_graph = nx.DiGraph()
         for u, v, data in self.graph.edges(data=True):
             simple_graph.add_edge(u, v, weight=data.get("normalized_amount_inr", 1.0))
 
-        # Identify source nodes (in_degree == 0 or low) and target sinks
-        sources = [n for n in simple_graph.nodes if simple_graph.in_degree(n) == 0 or simple_graph.out_degree(n) >= 2]
-        sinks = [n for n in simple_graph.nodes if simple_graph.out_degree(n) == 0]
+        for component in nx.weakly_connected_components(simple_graph):
+            if len(component) < min_hops + 1:
+                continue
 
-        for s in sources[:15]:
-            for t in sinks[:15]:
-                if s == t:
-                    continue
-                try:
-                    for path in nx.all_simple_paths(simple_graph, source=s, target=t, cutoff=max_hops):
-                        if len(path) - 1 >= min_hops:
-                            # Verify pass-through retention of intermediate nodes
-                            intermediate_mules = path[1:-1]
-                            is_valid_mule_chain = True
-                            for inter in intermediate_mules:
-                                inflow = self.graph.nodes[inter].get("total_inflow", 0.0)
-                                outflow = self.graph.nodes[inter].get("total_outflow", 0.0)
-                                if inflow <= 0 or (outflow / inflow) < 0.65:
-                                    is_valid_mule_chain = False
-                                    break
+            subgraph = simple_graph.subgraph(component)
+            sources = [n for n in subgraph.nodes if subgraph.in_degree(n) == 0 or subgraph.out_degree(n) >= 2]
+            sinks = [n for n in subgraph.nodes if subgraph.out_degree(n) == 0 or subgraph.in_degree(n) >= 2]
 
-                            if is_valid_mule_chain:
-                                chains.append({
-                                    "chain_id": f"CHAIN-{'-'.join(path[:3])}",
-                                    "hops_count": len(path) - 1,
-                                    "origin_account": path[0],
-                                    "destination_account": path[-1],
-                                    "intermediate_mules": intermediate_mules,
-                                    "path": path,
-                                    "risk_score": 88.0 if len(path) >= 4 else 75.0,
-                                    "typology": "MULTI_HOP_MULE_CHAIN"
-                                })
-                                if len(chains) >= 10:
-                                    return chains
-                except nx.NetworkXNoPath:
-                    continue
+            for s in sources[:10]:
+                for t in sinks[:10]:
+                    if s == t:
+                        continue
+                    try:
+                        for path in nx.all_simple_paths(subgraph, source=s, target=t, cutoff=max_hops):
+                            if len(path) - 1 >= min_hops:
+                                intermediate_mules = path[1:-1]
+                                is_valid_mule_chain = True
+                                for inter in intermediate_mules:
+                                    inflow = self.graph.nodes[inter].get("total_inflow", 0.0)
+                                    outflow = self.graph.nodes[inter].get("total_outflow", 0.0)
+                                    if inflow <= 0 or (outflow / inflow) < 0.65:
+                                        is_valid_mule_chain = False
+                                        break
+
+                                if is_valid_mule_chain:
+                                    chains.append({
+                                        "chain_id": f"CHAIN-{'-'.join(path[:3])}",
+                                        "hops_count": len(path) - 1,
+                                        "origin_account": path[0],
+                                        "destination_account": path[-1],
+                                        "intermediate_mules": intermediate_mules,
+                                        "path": path,
+                                        "risk_score": 88.0 if len(path) >= 4 else 75.0,
+                                        "typology": "MULTI_HOP_MULE_CHAIN"
+                                    })
+                                    if len(chains) >= 25:
+                                        return chains
+                    except (nx.NetworkXNoPath, nx.NodeNotFound):
+                        continue
 
         return chains
 
