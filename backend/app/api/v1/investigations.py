@@ -232,3 +232,27 @@ def get_case_timeline(investigation_id: str, db: sqlite3.Connection = Depends(ge
         ORDER BY e.created_at ASC
     """, (investigation_id,))
     return [dict(r) for r in cursor.fetchall()]
+
+@router.get("/{investigation_id}/fund-flow", summary="Reconstruct multi-hop fund flow for an investigation")
+def get_case_fund_flow(investigation_id: str, hops: int = Query(4, ge=1, le=8), db: sqlite3.Connection = Depends(get_db)):
+    cursor = db.cursor()
+    cursor.execute("""
+        SELECT a.transaction_id
+        FROM investigation_alerts ia
+        JOIN alerts a ON ia.alert_id = a.id
+        WHERE ia.investigation_id = ?
+        LIMIT 1
+    """, (investigation_id,))
+    row = cursor.fetchone()
+    if not row:
+        cursor.execute("SELECT id FROM transactions LIMIT 1")
+        row = cursor.fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="No transactions associated with investigation.")
+    from app.services.fund_flow_service import FundFlowTracingService
+    return FundFlowTracingService.trace_transaction_flow(db, row[0], max_hops=hops)
+
+@router.get("/trace/fund-flow", summary="Trace multi-hop fund flow from any transaction")
+def trace_transaction_fund_flow(transaction_id: str, hops: int = Query(4, ge=1, le=8), db: sqlite3.Connection = Depends(get_db)):
+    from app.services.fund_flow_service import FundFlowTracingService
+    return FundFlowTracingService.trace_transaction_flow(db, transaction_id, max_hops=hops)

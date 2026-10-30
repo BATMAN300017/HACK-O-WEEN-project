@@ -2,7 +2,8 @@ from fastapi import APIRouter
 from app.api.v1 import (
     health, auth, dashboard, transactions, alerts,
     investigations, entities, graph, intelligence,
-    feedback, analytics, rules, audit, reports, streaming
+    feedback, analytics, rules, audit, reports, streaming,
+    datasets, evaluation
 )
 
 api_router = APIRouter()
@@ -10,6 +11,8 @@ api_router = APIRouter()
 api_router.include_router(health.router, tags=["Health"])
 api_router.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 api_router.include_router(dashboard.router, prefix="/dashboard", tags=["Dashboard"])
+api_router.include_router(datasets.router, prefix="/datasets", tags=["Dataset Management & Ingestion"])
+api_router.include_router(evaluation.router, prefix="/evaluation", tags=["Independent Evaluation (Pipeline B)"])
 api_router.include_router(transactions.router, prefix="/transactions", tags=["Transactions"])
 api_router.include_router(alerts.router, prefix="/alerts", tags=["Alerts"])
 api_router.include_router(investigations.router, prefix="/investigations", tags=["Investigations"])

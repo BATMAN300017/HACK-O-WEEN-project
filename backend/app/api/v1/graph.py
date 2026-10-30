@@ -55,3 +55,9 @@ def get_graph_clusters(db: sqlite3.Connection = Depends(get_db)):
 @router.get("/suspicious-paths")
 def get_suspicious_paths(db: sqlite3.Connection = Depends(get_db)):
     return get_suspicious_clusters_and_paths(db)
+
+@router.get("/mule-networks", summary="Discover money mule networks, chains, and topological patterns")
+def get_mule_networks(db: sqlite3.Connection = Depends(get_db)):
+    from app.graph.mule_network_engine import MuleNetworkEngine
+    engine = MuleNetworkEngine(db)
+    return engine.get_full_topology_report()

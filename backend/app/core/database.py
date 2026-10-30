@@ -134,6 +134,7 @@ CREATE TABLE IF NOT EXISTS transactions (
     ip_address TEXT,
     status TEXT NOT NULL DEFAULT 'COMPLETED', -- COMPLETED, PENDING, FAILED, REVERSED
     scenario_id TEXT,
+    dataset_source TEXT DEFAULT 'INDIA_SIMULATOR',
     is_ground_truth_fraud INTEGER DEFAULT 0, -- STRICTLY SEPARATE DEMO TRUTH
     ground_truth_label TEXT,
     risk_score REAL DEFAULT 0.0,
@@ -432,6 +433,10 @@ def init_db():
             conn.executescript(SCHEMA_SQL)
             cursor = conn.cursor()
             # Ensure system users exist for copilot and automated agents
+            cursor.execute("PRAGMA table_info(transactions)")
+            txn_cols = [c[1] for c in cursor.fetchall()]
+            if "dataset_source" not in txn_cols:
+                cursor.execute("ALTER TABLE transactions ADD COLUMN dataset_source TEXT DEFAULT 'INDIA_SIMULATOR'")
             cursor.execute("SELECT id FROM users WHERE id = 'SYSTEM_COPILOT'")
             if not cursor.fetchone():
                 now = "2026-01-01T00:00:00Z"
