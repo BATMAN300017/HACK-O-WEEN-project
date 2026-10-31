@@ -36,6 +36,11 @@ from app.data_ingestion.label_isolation import (
 from app.detection.engine import score_transaction
 
 def seed_saml_and_nfpc_database(saml_limit: int = 5000, nfpc_limit: int = 5000):
+    env = os.environ.get("ENVIRONMENT", "development").lower()
+    if env == "production" and not os.environ.get("ALLOW_PRODUCTION_SEED"):
+        print("Safety guard: Production environment detected. Automatic seeding aborted to protect existing data.")
+        return
+
     print("=" * 60)
     print("Initializing SentinelFlow AI database with REAL SAML-D & NFPC datasets...")
     print("=" * 60)

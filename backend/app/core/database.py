@@ -32,7 +32,7 @@ class AdaptiveRow:
         return self._dict.items()
 
     def __iter__(self):
-        return iter(self._dict)
+        return iter(self._tuple)
 
     def __len__(self):
         return len(self._dict)

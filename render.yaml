@@ -14,17 +14,3 @@ services:
       - key: DATABASE_URL
         sync: false
 
-  - type: worker
-    name: sentinelflow-worker
-    runtime: docker
-    plan: starter
-    dockerCommand: python -m backend.worker
-    envVars:
-      - key: SUPABASE_URL
-        sync: false
-
-      - key: SUPABASE_SECRET_KEY
-        sync: false
-
-      - key: DATABASE_URL
-        sync: false

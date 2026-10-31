@@ -175,14 +175,14 @@
                         <span class="material-symbols-outlined text-[18px] text-status-warning">warning</span>
                         <span>Alerts Queue</span>
                     </div>
-                    <span id="badge-alert-count" class="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-status-warning/20 text-status-warning border border-status-warning/30">30</span>
+                    <span id="badge-alert-count" class="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-status-warning/20 text-status-warning border border-status-warning/30">--</span>
                 </button>
                 <button onclick="switchView('investigations')" id="nav-investigations" class="w-full text-left text-text-secondary hover:text-text-primary hover:bg-surface-variant font-mono text-xs px-3 py-2.5 rounded flex items-center justify-between transition-colors group">
                     <div class="flex items-center gap-2.5">
                         <span class="material-symbols-outlined text-[18px] group-hover:text-primary">folder_open</span>
                         <span>Investigations</span>
                     </div>
-                    <span id="badge-inv-count" class="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-surface-elevated text-primary border border-primary/20">8</span>
+                    <span id="badge-inv-count" class="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-surface-elevated text-primary border border-primary/20">--</span>
                 </button>
                 <button onclick="switchView('network')" id="nav-network" class="w-full text-left text-text-secondary hover:text-text-primary hover:bg-surface-variant font-mono text-xs px-3 py-2.5 rounded flex items-center gap-2.5 transition-colors group">
                     <span class="material-symbols-outlined text-[18px] group-hover:text-primary">hub</span>
@@ -210,15 +210,15 @@
                         <span class="text-status-success font-semibold">Active</span>
                     </div>
                     <div class="text-[11px] font-mono font-medium text-text-secondary truncate" id="active-model-name">
-                        Model: LogisticRegression v1.0
+                        Random Forest + Isolation Forest v1.0.0
                     </div>
-                    <div class="text-[10px] font-mono text-text-muted leading-tight mt-1">
-                        Ensemble: 30% Rules, 25% MAD, 25% ML, 20% Graph
+                    <div class="text-[10px] font-mono text-text-muted leading-tight mt-1" id="active-ensemble-info">
+                        Hybrid: 30% Rules, 25% MAD, 25% ML, 20% Graph
                     </div>
                 </div>
                 <div class="flex items-center justify-between px-1 text-[10px] font-mono text-text-muted">
-                    <span>Latency: 14ms</span>
-                    <span>SLA: 99.98%</span>
+                    <span id="telemetry-status">Engine: Active</span>
+                    <span id="telemetry-db">Storage: Supabase PG</span>
                 </div>
             </div>
         </aside>
@@ -260,11 +260,11 @@
                             <span>PROCESSED TRANSACTIONS</span>
                             <span class="material-symbols-outlined text-[16px] text-text-muted group-hover:text-primary transition-colors">speed</span>
                         </div>
-                        <div class="text-3xl font-mono text-text-primary tracking-tight font-bold" id="kpi-txns">1,000</div>
+                        <div class="text-3xl font-mono text-text-primary tracking-tight font-bold" id="kpi-txns">--</div>
                         <div class="flex items-center gap-2 mt-2 pt-2 border-t border-surface-border-subtle text-xs text-status-success font-medium">
                             <span class="w-1.5 h-1.5 rounded-full bg-status-success animate-pulse"></span>
-                            <span>42.5 TPM steady rate</span>
-                            <span class="text-[10px] font-mono text-text-muted ml-auto">+14% vs avg</span>
+                            <span id="kpi-txns-sub">Live ingestion stream</span>
+                            <span class="text-[10px] font-mono text-text-muted ml-auto" id="kpi-txns-tag">Supabase PG</span>
                         </div>
                     </div>
 
@@ -273,10 +273,10 @@
                             <span>ALERTS GENERATED</span>
                             <span class="material-symbols-outlined text-[16px] text-status-warning">notification_important</span>
                         </div>
-                        <div class="text-3xl font-mono text-status-warning tracking-tight font-bold" id="kpi-alerts">30</div>
+                        <div class="text-3xl font-mono text-status-warning tracking-tight font-bold" id="kpi-alerts">--</div>
                         <div class="flex items-center justify-between mt-2 pt-2 border-t border-surface-border-subtle text-xs text-text-secondary">
                             <span>Requiring triage or review</span>
-                            <span class="text-[10px] font-mono text-status-warning font-semibold">+5 today</span>
+                            <span class="text-[10px] font-mono text-status-warning font-semibold" id="kpi-alerts-sub">Real-time alerts</span>
                         </div>
                     </div>
 
@@ -285,9 +285,9 @@
                             <span>ACTIVE INVESTIGATIONS</span>
                             <span class="material-symbols-outlined text-[16px] text-primary">policy</span>
                         </div>
-                        <div class="text-3xl font-mono text-primary tracking-tight font-bold" id="kpi-invs">8</div>
+                        <div class="text-3xl font-mono text-primary tracking-tight font-bold" id="kpi-invs">--</div>
                         <div class="flex items-center justify-between mt-2 pt-2 border-t border-surface-border-subtle text-xs text-text-secondary">
-                            <span id="kpi-high-invs">8 High Priority cases</span>
+                            <span id="kpi-high-invs">-- High Priority cases</span>
                             <span class="px-1.5 py-0.2 rounded text-[10px] font-mono bg-primary/10 text-primary border border-primary/30">Active</span>
                         </div>
                     </div>
@@ -297,10 +297,10 @@
                             <span>CONFIRMED FRAUD / FPR</span>
                             <span class="material-symbols-outlined text-[16px] text-status-critical">gavel</span>
                         </div>
-                        <div class="text-3xl font-mono text-status-critical tracking-tight font-bold" id="kpi-fraud">3</div>
+                        <div class="text-3xl font-mono text-status-critical tracking-tight font-bold" id="kpi-fraud">--</div>
                         <div class="flex items-center justify-between mt-2 pt-2 border-t border-surface-border-subtle text-xs text-text-secondary">
-                            <span id="kpi-fpr">Verified FPR: 25%</span>
-                            <span class="text-[10px] font-mono text-status-success font-semibold">Low Noise</span>
+                            <span id="kpi-fpr">Verified FPR: --%</span>
+                            <span class="text-[10px] font-mono text-status-success font-semibold" id="kpi-fpr-sub">Ground Truth</span>
                         </div>
                     </div>
                 </div>
@@ -315,8 +315,8 @@
                                     <h2 class="text-base font-bold text-text-primary">
                                         Risk Tier Calibration & Volume Breakdown
                                     </h2>
-                                    <p class="text-xs text-text-muted mt-0.5">
-                                        Automated routing matrix across 1,000 real-time transaction scores
+                                    <p class="text-xs text-text-muted mt-0.5" id="risk-breakdown-sub">
+                                        Automated routing matrix across scored transactions
                                     </p>
                                 </div>
                                 <span class="text-[11px] font-mono px-2 py-0.5 bg-surface-elevated text-text-secondary border border-surface-border rounded">
@@ -327,22 +327,22 @@
                             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                                 <div class="p-3 rounded-lg bg-surface-base border border-status-success/20 flex flex-col justify-between">
                                     <div class="text-[11px] font-mono text-status-success font-semibold">Routine (0-24)</div>
-                                    <div class="text-2xl font-mono font-bold text-status-success my-1" id="band-routine">917</div>
+                                    <div class="text-2xl font-mono font-bold text-status-success my-1" id="band-routine">--</div>
                                     <div class="text-[10px] text-text-muted">Automated Clear</div>
                                 </div>
                                 <div class="p-3 rounded-lg bg-surface-base border border-secondary/20 flex flex-col justify-between">
                                     <div class="text-[11px] font-mono text-secondary font-semibold">Low (25-49)</div>
-                                    <div class="text-2xl font-mono font-bold text-secondary my-1" id="band-low">45</div>
+                                    <div class="text-2xl font-mono font-bold text-secondary my-1" id="band-low">--</div>
                                     <div class="text-[10px] text-text-muted">Periodic Audit</div>
                                 </div>
                                 <div class="p-3 rounded-lg bg-surface-base border border-status-warning/20 flex flex-col justify-between">
                                     <div class="text-[11px] font-mono text-status-warning font-semibold">Elevated (50-74)</div>
-                                    <div class="text-2xl font-mono font-bold text-status-warning my-1" id="band-elevated">24</div>
+                                    <div class="text-2xl font-mono font-bold text-status-warning my-1" id="band-elevated">--</div>
                                     <div class="text-[10px] text-text-muted">Analyst Review</div>
                                 </div>
                                 <div class="p-3 rounded-lg bg-surface-base border border-status-critical/30 flex flex-col justify-between shadow-[0_0_12px_rgba(244,63,94,0.1)]">
                                     <div class="text-[11px] font-mono text-status-critical font-semibold">High (75-100)</div>
-                                    <div class="text-2xl font-mono font-bold text-status-critical my-1" id="band-high">14</div>
+                                    <div class="text-2xl font-mono font-bold text-status-critical my-1" id="band-high">--</div>
                                     <div class="text-[10px] text-status-critical/90 font-medium">Self-Directed Inv</div>
                                 </div>
                             </div>
@@ -351,13 +351,13 @@
                         <div class="mt-4 pt-3 border-t border-surface-border">
                             <div class="flex items-center justify-between text-[11px] font-mono text-text-muted mb-1.5">
                                 <span>Overall Distribution Ratio</span>
-                                <span>91.7% Auto-cleared • 1.4% Critical Escalated</span>
+                                <span id="risk-distribution-summary">Loading distribution...</span>
                             </div>
                             <div class="w-full h-2 rounded-full bg-surface-base overflow-hidden flex">
-                                <div class="h-full bg-status-success" style="width: 91.7%" title="Routine: 917"></div>
-                                <div class="h-full bg-secondary" style="width: 4.5%" title="Low: 45"></div>
-                                <div class="h-full bg-status-warning" style="width: 2.4%" title="Elevated: 24"></div>
-                                <div class="h-full bg-status-critical" style="width: 1.4%" title="High: 14"></div>
+                                <div id="bar-routine" class="h-full bg-status-success" style="width: 0%" title="Routine"></div>
+                                <div id="bar-low" class="h-full bg-secondary" style="width: 0%" title="Low"></div>
+                                <div id="bar-elevated" class="h-full bg-status-warning" style="width: 0%" title="Elevated"></div>
+                                <div id="bar-high" class="h-full bg-status-critical" style="width: 0%" title="High"></div>
                             </div>
                         </div>
                     </div>
@@ -855,7 +855,7 @@
                             <p class="text-[11px] text-text-secondary font-mono">Role: Unsupervised Development & Detection Stream (USD, EUR, GBP, AED, INR, SGD)</p>
                         </div>
                         <div class="text-right">
-                            <span class="text-xl font-bold font-mono text-primary" id="saml-count-badge">400</span>
+                            <span class="text-xl font-bold font-mono text-primary" id="saml-count-badge">--</span>
                             <span class="text-[10px] font-mono text-text-muted block">Active Records</span>
                         </div>
                     </div>
@@ -866,7 +866,7 @@
                             <p class="text-[11px] text-text-secondary font-mono">Role: Governed Feedback & Continuous Learning (Ground Truth: Scam vs Legit)</p>
                         </div>
                         <div class="text-right">
-                            <span class="text-xl font-bold font-mono text-status-warning" id="nfpc-count-badge">50</span>
+                            <span class="text-xl font-bold font-mono text-status-warning" id="nfpc-count-badge">--</span>
                             <span class="text-[10px] font-mono text-text-muted block">Labeled Records</span>
                         </div>
                     </div>
@@ -1213,7 +1213,7 @@
             if (viewId === 'overview') refreshDashboard();
             if (viewId === 'datasets') loadDatasetManagement();
             if (viewId === 'fundflow') {
-                const prefill = currentActiveCaseId ? 'TXN-SCEN-A-001' : 'TXN-SCEN-A-001';
+                const prefill = currentActiveCaseId ? 'TXN-SAML-000000' : 'TXN-SAML-000000';
                 document.getElementById('input-trace-txnid').value = prefill;
                 runFundFlowTrace();
             }
@@ -1222,7 +1222,7 @@
             if (viewId === 'alerts') loadAlerts();
             if (viewId === 'investigations') loadInvestigations();
             if (viewId === 'network') loadNetworkIntelligence();
-            if (viewId === 'learning') loadLearningStatus(); loadLabeledFeed();
+            if (viewId === 'learning') { loadLearningStatus(); loadLabeledFeed(); }
             if (viewId === 'rules') loadRules();
             if (viewId === 'audit') loadAuditTrail();
         }
@@ -1233,42 +1233,58 @@
             try {
                 const res = await fetch(`${API_BASE}/datasets`);
                 const datasets = await res.json();
+                
+                // Update header badges
+                const saml = datasets.find(d => d.id === 'SAML_D');
+                const nfpc = datasets.find(d => d.id === 'NFPC_MULE');
+                if (saml && document.getElementById('saml-count-badge')) {
+                    document.getElementById('saml-count-badge').innerText = Number(saml.ingested_transactions_count || 0).toLocaleString();
+                }
+                if (nfpc && document.getElementById('nfpc-count-badge')) {
+                    document.getElementById('nfpc-count-badge').innerText = Number(nfpc.ingested_transactions_count || 0).toLocaleString();
+                }
+
                 const container = document.getElementById('datasets-cards-grid');
-                container.innerHTML = datasets.map(d => `
-                    <div class="bg-surface-card rounded-xl border border-surface-border p-4 space-y-3">
-                        <div class="flex items-center justify-between">
-                            <span class="px-2 py-0.5 text-[10px] font-mono bg-primary/10 text-primary border border-primary/20 rounded font-bold">${d.id}</span>
-                            <span class="px-2 py-0.5 text-[10px] font-mono bg-status-success/10 text-status-success rounded font-semibold">${d.status}</span>
+                if (container) {
+                    container.innerHTML = datasets.map(d => `
+                        <div class="bg-surface-card rounded-xl border border-surface-border p-4 space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="px-2 py-0.5 text-[10px] font-mono bg-primary/10 text-primary border border-primary/20 rounded font-bold">${d.id}</span>
+                                <span class="px-2 py-0.5 text-[10px] font-mono bg-status-success/10 text-status-success rounded font-semibold">${d.status}</span>
+                            </div>
+                            <h4 class="text-sm font-bold text-text-primary truncate">${d.title}</h4>
+                            <div class="text-[11px] font-mono text-text-secondary space-y-1">
+                                <div class="flex justify-between"><span>Transactions:</span><span class="font-bold text-text-primary">${Number(d.ingested_transactions_count).toLocaleString()}</span></div>
+                                <div class="flex justify-between"><span>Granularity:</span><span class="text-primary">${d.label_granularity}</span></div>
+                                <div class="flex justify-between"><span>Role:</span><span class="text-text-muted truncate max-w-[140px]">${d.role}</span></div>
+                            </div>
+                            <div class="pt-2 border-t border-surface-border flex gap-2">
+                                <button onclick="triggerDatasetIngest('${d.id}')" class="w-full py-1.5 bg-surface-base hover:bg-surface-variant text-text-primary text-[11px] font-mono font-bold rounded border border-surface-border transition">
+                                    Ingest Batch
+                                </button>
+                            </div>
                         </div>
-                        <h4 class="text-sm font-bold text-text-primary truncate">${d.title}</h4>
-                        <div class="text-[11px] font-mono text-text-secondary space-y-1">
-                            <div class="flex justify-between"><span>Transactions:</span><span class="font-bold text-text-primary">${Number(d.ingested_transactions_count).toLocaleString()}</span></div>
-                            <div class="flex justify-between"><span>Granularity:</span><span class="text-primary">${d.label_granularity}</span></div>
-                            <div class="flex justify-between"><span>Role:</span><span class="text-text-muted truncate max-w-[140px]">${d.role}</span></div>
-                        </div>
-                        <div class="pt-2 border-t border-surface-border flex gap-2">
-                            <button onclick="triggerDatasetIngest('${d.id}')" class="w-full py-1.5 bg-surface-base hover:bg-surface-variant text-text-primary text-[11px] font-mono font-bold rounded border border-surface-border transition">
-                                Ingest Batch
-                            </button>
-                        </div>
-                    </div>
-                `).join('');
+                    `).join('');
+                }
 
                 // Load RBI/NPCI Benchmarks
                 const bRes = await fetch(`${API_BASE}/datasets/rbi-npci-benchmarks`);
                 const bData = await bRes.json();
                 const bTbody = document.getElementById('benchmarks-tbody');
-                bTbody.innerHTML = bData.benchmarks.map(b => `
-                    <tr>
-                        <td class="px-3 py-2 font-bold text-text-primary">${b.channel_name.split(' ')[0]}</td>
-                        <td class="px-3 py-2">${Number(b.monthly_volume_million).toLocaleString()}M</td>
-                        <td class="px-3 py-2 text-primary font-bold">₹${Number(b.avg_ticket_size_inr).toLocaleString()}</td>
-                        <td class="px-3 py-2 text-status-success">${b.channel_share_percentage}%</td>
-                    </tr>
-                `).join('');
+                if (bTbody && bData.benchmarks) {
+                    bTbody.innerHTML = bData.benchmarks.map(b => `
+                        <tr>
+                            <td class="px-3 py-2 font-bold text-text-primary">${b.channel_name.split(' ')[0]}</td>
+                            <td class="px-3 py-2">${Number(b.monthly_volume_million).toLocaleString()}M</td>
+                            <td class="px-3 py-2 text-primary font-bold">₹${Number(b.avg_ticket_size_inr).toLocaleString()}</td>
+                            <td class="px-3 py-2 text-status-success">${b.channel_share_percentage}%</td>
+                        </tr>
+                    `).join('');
+                }
             } catch(e) {
                 console.error("Error loading datasets:", e);
             }
+            loadDatasetTransactions();
         }
 
         async function triggerDatasetIngest(datasetId) {
@@ -1416,37 +1432,96 @@
         }
 
         async function refreshDashboard() {
+            // Loading indication
+            const kpiTxns = document.getElementById('kpi-txns');
+            const kpiAlerts = document.getElementById('kpi-alerts');
+            const kpiInvs = document.getElementById('kpi-invs');
+            const kpiFraud = document.getElementById('kpi-fraud');
+
             try {
                 const res = await fetch(`${API_BASE}/dashboard/summary`);
+                if (!res.ok) throw new Error(`Summary HTTP ${res.status}`);
                 const data = await res.json();
-                document.getElementById('kpi-txns').innerText = Number(data.transactions_processed || 1000).toLocaleString();
-                document.getElementById('kpi-alerts').innerText = Number(data.alerts_generated || 30).toLocaleString();
-                document.getElementById('kpi-invs').innerText = Number(data.open_investigations || 8).toLocaleString();
-                document.getElementById('kpi-high-invs').innerText = `${data.high_priority_cases || 8} High Priority cases`;
-                document.getElementById('kpi-fraud').innerText = Number(data.confirmed_fraud_count || 3).toLocaleString();
-                document.getElementById('kpi-fpr').innerText = `Verified FPR: ${data.verified_false_positive_rate || 25}%`;
+                
+                if (kpiTxns) kpiTxns.innerText = (data.transactions_processed !== undefined && data.transactions_processed !== null) ? Number(data.transactions_processed).toLocaleString() : '0';
+                if (kpiAlerts) kpiAlerts.innerText = (data.alerts_generated !== undefined && data.alerts_generated !== null) ? Number(data.alerts_generated).toLocaleString() : '0';
+                if (kpiInvs) kpiInvs.innerText = (data.open_investigations !== undefined && data.open_investigations !== null) ? Number(data.open_investigations).toLocaleString() : '0';
+                if (document.getElementById('kpi-high-invs')) {
+                    document.getElementById('kpi-high-invs').innerText = `${data.high_priority_cases !== undefined ? data.high_priority_cases : 0} High Priority cases`;
+                }
+                if (kpiFraud) kpiFraud.innerText = (data.confirmed_fraud_count !== undefined && data.confirmed_fraud_count !== null) ? Number(data.confirmed_fraud_count).toLocaleString() : '0';
+                if (document.getElementById('kpi-fpr')) {
+                    document.getElementById('kpi-fpr').innerText = `Verified FPR: ${data.verified_false_positive_rate !== undefined ? data.verified_false_positive_rate : 0}%`;
+                }
+                if (document.getElementById('badge-inv-count')) {
+                    document.getElementById('badge-inv-count').innerText = (data.open_investigations !== undefined) ? data.open_investigations : 0;
+                }
 
                 // Trends & Risk score distribution
                 const trendsRes = await fetch(`${API_BASE}/dashboard/trends`);
-                const trends = await trendsRes.json();
-                if (trends.risk_score_distribution) {
-                    trends.risk_score_distribution.forEach(b => {
-                        if (b.band.includes('Routine') && document.getElementById('band-routine')) document.getElementById('band-routine').innerText = b.count;
-                        if (b.band.includes('Low') && document.getElementById('band-low')) document.getElementById('band-low').innerText = b.count;
-                        if (b.band.includes('Elevated') && document.getElementById('band-elevated')) document.getElementById('band-elevated').innerText = b.count;
-                        if (b.band.includes('High') && document.getElementById('band-high')) document.getElementById('band-high').innerText = b.count;
-                    });
+                if (trendsRes.ok) {
+                    const trends = await trendsRes.json();
+                    let routineCount = 0, lowCount = 0, elevatedCount = 0, highCount = 0;
+
+                    if (trends.risk_score_distribution && Array.isArray(trends.risk_score_distribution)) {
+                        trends.risk_score_distribution.forEach(b => {
+                            const cnt = Number(b.count || 0);
+                            if (b.band.includes('Routine')) {
+                                routineCount = cnt;
+                                if (document.getElementById('band-routine')) document.getElementById('band-routine').innerText = cnt.toLocaleString();
+                            } else if (b.band.includes('Low')) {
+                                lowCount = cnt;
+                                if (document.getElementById('band-low')) document.getElementById('band-low').innerText = cnt.toLocaleString();
+                            } else if (b.band.includes('Elevated')) {
+                                elevatedCount = cnt;
+                                if (document.getElementById('band-elevated')) document.getElementById('band-elevated').innerText = cnt.toLocaleString();
+                            } else if (b.band.includes('High')) {
+                                highCount = cnt;
+                                if (document.getElementById('band-high')) document.getElementById('band-high').innerText = cnt.toLocaleString();
+                            }
+                        });
+
+                        const totalScored = routineCount + lowCount + elevatedCount + highCount;
+                        if (totalScored > 0) {
+                            const rPct = ((routineCount / totalScored) * 100).toFixed(1);
+                            const lPct = ((lowCount / totalScored) * 100).toFixed(1);
+                            const ePct = ((elevatedCount / totalScored) * 100).toFixed(1);
+                            const hPct = ((highCount / totalScored) * 100).toFixed(1);
+
+                            const rBar = document.getElementById('bar-routine');
+                            const lBar = document.getElementById('bar-low');
+                            const eBar = document.getElementById('bar-elevated');
+                            const hBar = document.getElementById('bar-high');
+
+                            if (rBar) { rBar.style.width = `${rPct}%`; rBar.title = `Routine: ${routineCount.toLocaleString()} (${rPct}%)`; }
+                            if (lBar) { lBar.style.width = `${lPct}%`; lBar.title = `Low: ${lowCount.toLocaleString()} (${lPct}%)`; }
+                            if (eBar) { eBar.style.width = `${ePct}%`; eBar.title = `Elevated: ${elevatedCount.toLocaleString()} (${ePct}%)`; }
+                            if (hBar) { hBar.style.width = `${hPct}%`; hBar.title = `High: ${highCount.toLocaleString()} (${hPct}%)`; }
+
+                            const distSummary = document.getElementById('risk-distribution-summary');
+                            if (distSummary) distSummary.innerText = `${rPct}% Auto-cleared Routine • ${hPct}% High Escalated`;
+
+                            const subHeader = document.getElementById('risk-breakdown-sub');
+                            if (subHeader) subHeader.innerText = `Automated routing matrix across ${totalScored.toLocaleString()} real scored transactions`;
+                        }
+                    }
                 }
 
                 // Recent priority alerts in overview
                 const alertsRes = await fetch(`${API_BASE}/alerts?page_size=5`);
-                const alertsData = await alertsRes.json();
-                if (document.getElementById('badge-alert-count')) {
-                    document.getElementById('badge-alert-count').innerText = alertsData.total || 0;
+                if (alertsRes.ok) {
+                    const alertsData = await alertsRes.json();
+                    if (document.getElementById('badge-alert-count')) {
+                        document.getElementById('badge-alert-count').innerText = (alertsData.total !== undefined) ? alertsData.total : 0;
+                    }
+                    renderOverviewAlertsTable(alertsData.items || []);
                 }
-                renderOverviewAlertsTable(alertsData.items || []);
             } catch (err) {
-                console.error("Dashboard error", err);
+                console.error("Dashboard error:", err);
+                if (kpiTxns) kpiTxns.innerText = "Error";
+                if (kpiAlerts) kpiAlerts.innerText = "Error";
+                if (kpiInvs) kpiInvs.innerText = "Error";
+                if (kpiFraud) kpiFraud.innerText = "Error";
             }
         }
 
@@ -2064,10 +2139,6 @@
         
         // ================= DATASET TRANSACTIONS BROWSER LOGIC =================
         let dsCurrentPage = 1;
-
-        async function loadDatasetManagement() {
-            loadDatasetTransactions();
-        }
 
         async function loadDatasetTransactions() {
             const tbody = document.getElementById('ds-transactions-tbody');
