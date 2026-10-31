@@ -124,17 +124,52 @@ def get_db_connection() -> Generator[Any, None, None]:
         try:
             import psycopg2
             from psycopg2.extras import RealDictCursor
-            conn = psycopg2.connect(url, cursor_factory=RealDictCursor, connect_timeout=15)
-            wrapped = PostgresConnectionWrapper(conn)
+            from urllib.parse import urlparse
+
+            conn = None
+            connection_error = None
+
+            # Attempt 1: Connect with configured DATABASE_URL
             try:
-                yield wrapped
-                conn.commit()
-            except Exception:
-                conn.rollback()
-                raise
-            finally:
-                conn.close()
-            return
+                conn = psycopg2.connect(url, cursor_factory=RealDictCursor, connect_timeout=8)
+            except Exception as e1:
+                connection_error = e1
+                # If direct hostname is IPv6-only (db.<ref>.supabase.co), failover to IPv4 pooler
+                parsed = urlparse(url)
+                if parsed.hostname and "db." in parsed.hostname and ".supabase.co" in parsed.hostname:
+                    project_ref = parsed.hostname.split(".")[1]
+                    pooler_host = "aws-0-ap-northeast-1.pooler.supabase.com"
+                    logger.warning(f"Direct Supabase connection failed ({e1}). Attempting IPv4 pooler {pooler_host}...")
+                    for port in [5432, 6543]:
+                        try:
+                            conn = psycopg2.connect(
+                                host=pooler_host,
+                                port=port,
+                                user=f"postgres.{project_ref}",
+                                password=parsed.password,
+                                dbname=parsed.path.lstrip("/") or "postgres",
+                                cursor_factory=RealDictCursor,
+                                connect_timeout=8
+                            )
+                            logger.info(f"Connected to Supabase via IPv4 pooler on port {port}.")
+                            connection_error = None
+                            break
+                        except Exception as e2:
+                            connection_error = e2
+
+            if conn is not None:
+                wrapped = PostgresConnectionWrapper(conn)
+                try:
+                    yield wrapped
+                    conn.commit()
+                except Exception:
+                    conn.rollback()
+                    raise
+                finally:
+                    conn.close()
+                return
+            else:
+                logger.error(f"PostgreSQL connection error: {connection_error}. Falling back to SQLite.")
         except ImportError:
             logger.warning("psycopg2 driver not installed in current environment; using SQLite for local queries while Supabase Auth & Storage remain active.")
         except Exception as e:

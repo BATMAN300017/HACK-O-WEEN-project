@@ -16,11 +16,11 @@ class SupabaseClient:
     - Transactional Alert Email dispatch
     """
     def __init__(self):
-        self.url = os.getenv("SUPABASE_URL", settings.SUPABASE_URL).rstrip("/")
-        self.anon_key = os.getenv("SUPABASE_ANON_KEY", settings.SUPABASE_ANON_KEY)
-        self.service_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY", settings.SUPABASE_SERVICE_ROLE_KEY)
-        self.jwt_secret = os.getenv("SUPABASE_JWT_SECRET", settings.SUPABASE_JWT_SECRET)
-        self.bucket = os.getenv("SUPABASE_STORAGE_BUCKET", settings.SUPABASE_STORAGE_BUCKET)
+        self.url = os.getenv("SUPABASE_URL", getattr(settings, "SUPABASE_URL", "")).rstrip("/")
+        self.anon_key = os.getenv("SUPABASE_PUBLISHABLE_KEY", os.getenv("SUPABASE_ANON_KEY", getattr(settings, "SUPABASE_PUBLISHABLE_KEY", "")))
+        self.service_key = os.getenv("SUPABASE_SECRET_KEY", os.getenv("SUPABASE_SERVICE_ROLE_KEY", getattr(settings, "SUPABASE_SECRET_KEY", "")))
+        self.jwt_secret = os.getenv("SUPABASE_JWT_SECRET", getattr(settings, "SUPABASE_JWT_SECRET", ""))
+        self.bucket = os.getenv("SUPABASE_STORAGE_BUCKET", getattr(settings, "SUPABASE_STORAGE_BUCKET", "evidence-files"))
 
     @property
     def is_configured(self) -> bool:
