@@ -1,0 +1,19 @@
+{
+  "dataset_name": "SAML-D",
+  "description": "Synthetic Transaction Monitoring Dataset for AML",
+  "format": "CSV",
+  "total_records": 25000,
+  "laundering_cases": 34,
+  "typologies": [
+    "Structuring",
+    "Fan_In",
+    "Layered_Fan_Out",
+    "Cycle",
+    "Scatter-Gather",
+    "Smurfing",
+    "Cash_Withdrawal",
+    "Stacked Bipartite"
+  ],
+  "license": "CC BY-SA 4.0",
+  "uploaded_at": "2026-10-31T08:15:35.453837+00:00"
+}

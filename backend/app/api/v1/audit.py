@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, Query
 import sqlite3
 import json
 from typing import Optional
+from app.utils.json_utils import safe_json_loads
 from app.api.dependencies import get_db, require_permission
 from app.core.permissions import Permission
 
@@ -41,7 +42,7 @@ def get_audit_trail(
     events = []
     for r in cursor.fetchall():
         d = dict(r)
-        d["metadata"] = json.loads(d.get("metadata_json") or "{}")
+        d["metadata"] = safe_json_loads(d.get("metadata_json"), {})
         events.append(d)
         
     return {

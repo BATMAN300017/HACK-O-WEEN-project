@@ -34,13 +34,13 @@ from app.core.logging import logger
 
 NFPC_CANONICAL_COLUMNS = [
     "transaction_id",
-    "account_number",
-    "counterparty_account",
-    "transaction_amount",
+    "account_id",
+    "counterparty_id",
+    "amount",
     "transaction_timestamp",
-    "payment_mode",
-    "bank_code",
-    "mule_label"  # Ground-truth label (Account-level)
+    "channel",
+    "mule_label",  # Ground-truth label (Account-level)
+    "is_mule"
 ]
 
 class NfpcAdapter(BaseDatasetAdapter):
@@ -48,17 +48,39 @@ class NfpcAdapter(BaseDatasetAdapter):
 
     def __init__(self, batch_size: int = 5000):
         super().__init__(dataset_name="NFPC_MULE", batch_size=batch_size)
+        self._ground_truth_labels: Optional[Dict[str, int]] = None
+
+    def _ensure_label_index(self):
+        """Lazy-loads account-level ground truth labels from train_labels.parquet if available."""
+        if self._ground_truth_labels is None:
+            self._ground_truth_labels = {}
+            base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+            labels_path = os.path.join(base_dir, "data", "nfpc", "train_labels.parquet")
+            if os.path.exists(labels_path):
+                try:
+                    import pyarrow.parquet as pq
+                    tbl = pq.read_table(labels_path, columns=["account_id", "is_mule"])
+                    df = tbl.to_pandas()
+                    self._ground_truth_labels = dict(zip(df["account_id"], df["is_mule"]))
+                    logger.info(f"Loaded {len(self._ground_truth_labels):,} NFPC ground truth account labels.")
+                except Exception as e:
+                    logger.warning(f"Could not load train_labels.parquet: {e}")
 
     def inspect_schema(self, source_path: str) -> Dict[str, Any]:
         """Inspects Parquet metadata without loading records into memory."""
         if not os.path.exists(source_path):
-            return {
-                "dataset": self.dataset_name,
-                "status": "NOT_FOUND",
-                "canonical_columns": NFPC_CANONICAL_COLUMNS,
-                "label_granularity": "ACCOUNT_LEVEL",
-                "security_status": "PROTECTED_ISOLATION_ACTIVE"
-            }
+            base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+            real_fallback = os.path.join(base_dir, "data", "nfpc", "part_0001.parquet")
+            if os.path.exists(real_fallback):
+                source_path = real_fallback
+            else:
+                return {
+                    "dataset": self.dataset_name,
+                    "status": "NOT_FOUND",
+                    "canonical_columns": NFPC_CANONICAL_COLUMNS,
+                    "label_granularity": "ACCOUNT_LEVEL",
+                    "security_status": "PROTECTED_ISOLATION_ACTIVE"
+                }
 
         import pyarrow.parquet as pq
         parquet_file = pq.ParquetFile(source_path)
@@ -85,9 +107,14 @@ class NfpcAdapter(BaseDatasetAdapter):
     ) -> Generator[List[Dict[str, Any]], None, None]:
         """Streams Parquet batches via PyArrow iter_batches to maintain a constant tiny memory footprint."""
         if not os.path.exists(source_path):
-            logger.warning(f"NFPC file not found at {source_path}. Generating verified benchmark sample batch.")
-            yield self.generate_verification_sample(count=max_records or 200)
-            return
+            base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+            real_fallback = os.path.join(base_dir, "data", "nfpc", "part_0001.parquet")
+            if os.path.exists(real_fallback):
+                source_path = real_fallback
+            else:
+                logger.warning(f"NFPC file not found at {source_path}. Generating verified benchmark sample batch.")
+                yield self.generate_verification_sample(count=max_records or 200)
+                return
 
         import pyarrow.parquet as pq
         parquet_file = pq.ParquetFile(source_path)
@@ -121,6 +148,7 @@ class NfpcAdapter(BaseDatasetAdapter):
         2. Routes account-level labels to the protected store.
         3. Returns clean transactions for Pipeline A.
         """
+        self._ensure_label_index()
         start_t = datetime.now()
         normalized_txns: List[Dict[str, Any]] = []
         labels_isolated = 0
@@ -136,20 +164,33 @@ class NfpcAdapter(BaseDatasetAdapter):
                 det_row, prot_labels = strip_labels_for_detection(row)
 
                 # 2. Extract Canonical Fields
-                src_acc = str(det_row.get("account_number") or det_row.get("source_account_id") or det_row.get("Sender_account"))
-                dest_acc = str(det_row.get("counterparty_account") or det_row.get("destination_account_id") or det_row.get("Receiver_account"))
-                amt = float(det_row.get("transaction_amount") or det_row.get("amount", 0.0))
+                src_acc = str(
+                    det_row.get("account_id") or
+                    det_row.get("account_number") or
+                    det_row.get("source_account_id") or
+                    det_row.get("Sender_account") or ""
+                ).strip()
+
+                dest_acc = str(
+                    det_row.get("counterparty_id") or
+                    det_row.get("counterparty_account") or
+                    det_row.get("destination_account_id") or
+                    det_row.get("Receiver_account") or ""
+                ).strip()
+
+                amt = float(det_row.get("amount") or det_row.get("transaction_amount") or 0.0)
                 date_val = str(det_row.get("transaction_timestamp") or det_row.get("created_at") or datetime.now(timezone.utc).isoformat())
-                channel = str(det_row.get("payment_mode") or det_row.get("payment_channel", "IMPS")).upper()
+                channel = str(det_row.get("channel") or det_row.get("payment_mode") or det_row.get("payment_channel", "IMPS")).upper()
                 bank_code = str(det_row.get("bank_code") or "INDIAN_BANK")
 
-                txn_id = f"NFPC-{uuid.uuid4().hex[:12]}"
+                raw_txn_id = det_row.get("transaction_id")
+                txn_id = f"NFPC-{raw_txn_id}" if raw_txn_id else f"NFPC-{uuid.uuid4().hex[:12]}"
 
                 norm_record = {
                     "id": txn_id,
                     "event_id": f"EVT-{txn_id}",
                     "source_account_id": src_acc,
-                    "destination_account_id": dest_acc,
+                    "destination_account_id": dest_acc if dest_acc else None,
                     "amount": amt,
                     "currency": "INR",  # NFPC is domestic Indian banking
                     "created_at": date_val,
@@ -183,14 +224,18 @@ class NfpcAdapter(BaseDatasetAdapter):
                             is_mule = 1 if str(prot_labels[k]).lower() in ("true", "1", "mule") else 0
                         break
 
-                if is_mule is not None and src_acc not in seen_accounts:
+                # If label not in row, check label index from train_labels.parquet
+                if is_mule is None and self._ground_truth_labels and src_acc in self._ground_truth_labels:
+                    is_mule = int(self._ground_truth_labels[src_acc])
+
+                if is_mule is not None and src_acc and src_acc not in seen_accounts:
                     seen_accounts.add(src_acc)
                     store_protected_account_label(
                         account_id=src_acc,
                         dataset_name="NFPC_MULE",
                         is_mule=is_mule,
                         mule_role="MULE_SUSPECT" if is_mule == 1 else "LEGITIMATE",
-                        raw_labels=prot_labels,
+                        raw_labels={"account_id": src_acc, "is_mule": is_mule, "source": "train_labels.parquet"},
                         timestamp=date_val
                     )
                     labels_isolated += 1

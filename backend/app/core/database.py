@@ -8,6 +8,103 @@ from app.core.logging import logger
 
 _db_lock = threading.Lock()
 
+class AdaptiveRow:
+    """Provides dual access by column name (dict-like) and index (tuple-like), matching sqlite3.Row exactly."""
+    def __init__(self, data_dict):
+        self._dict = dict(data_dict) if isinstance(data_dict, dict) else {}
+        self._tuple = tuple(data_dict.values()) if isinstance(data_dict, dict) else tuple(data_dict or ())
+
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            return self._tuple[key]
+        return self._dict[key]
+
+    def get(self, key, default=None):
+        return self._dict.get(key, default)
+
+    def keys(self):
+        return self._dict.keys()
+
+    def values(self):
+        return self._dict.values()
+
+    def items(self):
+        return self._dict.items()
+
+    def __iter__(self):
+        return iter(self._dict)
+
+    def __len__(self):
+        return len(self._dict)
+
+    def __contains__(self, key):
+        return key in self._dict
+
+    def __repr__(self):
+        return repr(self._dict)
+
+class PostgresCursorWrapper:
+    """Wraps psycopg2 cursor to automatically translate '?' placeholders, handle PRAGMAs, and return AdaptiveRow."""
+    def __init__(self, cursor):
+        self._cur = cursor
+
+    def __getattr__(self, name):
+        return getattr(self._cur, name)
+
+    def _transform_query(self, query: str) -> str:
+        clean = query.strip()
+        if clean.upper().startswith("INSERT OR IGNORE INTO"):
+            query = "INSERT INTO" + clean[len("INSERT OR IGNORE INTO"):]
+            if "ON CONFLICT" not in query.upper():
+                query = query.rstrip("; \n\t") + " ON CONFLICT DO NOTHING"
+        elif clean.upper().startswith("INSERT OR REPLACE INTO"):
+            query = "INSERT INTO" + clean[len("INSERT OR REPLACE INTO"):]
+            if "ON CONFLICT" not in query.upper():
+                query = query.rstrip("; \n\t") + " ON CONFLICT DO NOTHING"
+        if "?" in query:
+            query = query.replace("?", "%s")
+        return query
+
+    def execute(self, query, params=None):
+        if query.strip().upper().startswith("PRAGMA"):
+            return None
+        query = self._transform_query(query)
+        if params is None:
+            return self._cur.execute(query)
+        return self._cur.execute(query, params)
+
+    def executemany(self, query, seq_of_params):
+        if query.strip().upper().startswith("PRAGMA"):
+            return None
+        query = self._transform_query(query)
+        return self._cur.executemany(query, seq_of_params)
+
+    def fetchone(self):
+        row = self._cur.fetchone()
+        if row is None:
+            return None
+        return AdaptiveRow(row)
+
+    def fetchall(self):
+        rows = self._cur.fetchall()
+        return [AdaptiveRow(r) for r in rows]
+
+    def fetchmany(self, size=None):
+        rows = self._cur.fetchmany(size) if size is not None else self._cur.fetchmany()
+        return [AdaptiveRow(r) for r in rows]
+
+class PostgresConnectionWrapper:
+    """Wraps psycopg2 connection to return wrapped cursors for SQLite parameter compatibility."""
+    def __init__(self, conn):
+        self._conn = conn
+
+    def __getattr__(self, name):
+        return getattr(self._conn, name)
+
+    def cursor(self, *args, **kwargs):
+        cur = self._conn.cursor(*args, **kwargs)
+        return PostgresCursorWrapper(cur)
+
 def get_db_path() -> str:
     url = settings.DATABASE_URL
     if url.startswith("sqlite:///"):
@@ -27,9 +124,10 @@ def get_db_connection() -> Generator[Any, None, None]:
         try:
             import psycopg2
             from psycopg2.extras import RealDictCursor
-            conn = psycopg2.connect(url, cursor_factory=RealDictCursor)
+            conn = psycopg2.connect(url, cursor_factory=RealDictCursor, connect_timeout=15)
+            wrapped = PostgresConnectionWrapper(conn)
             try:
-                yield conn
+                yield wrapped
                 conn.commit()
             except Exception:
                 conn.rollback()
@@ -55,7 +153,7 @@ def get_db_connection() -> Generator[Any, None, None]:
         conn.close()
 
 @contextmanager
-def transaction_scope() -> Generator[sqlite3.Connection, None, None]:
+def transaction_scope() -> Generator[Any, None, None]:
     with _db_lock:
         with get_db_connection() as conn:
             try:
@@ -98,8 +196,7 @@ CREATE TABLE IF NOT EXISTS accounts (
     balance REAL NOT NULL DEFAULT 0.0,
     status TEXT NOT NULL DEFAULT 'ACTIVE', -- ACTIVE, SUSPENDED, CLOSED
     is_dormant INTEGER NOT NULL DEFAULT 0,
-    created_at TEXT NOT NULL,
-    FOREIGN KEY (customer_id) REFERENCES customers(id)
+    created_at TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS merchants (
@@ -113,7 +210,7 @@ CREATE TABLE IF NOT EXISTS merchants (
 CREATE TABLE IF NOT EXISTS devices (
     id TEXT PRIMARY KEY,
     device_fingerprint TEXT UNIQUE NOT NULL,
-    device_type TEXT NOT NULL, -- MOBILE, DESKTOP, TABLET
+    device_type TEXT NOT NULL,
     os TEXT,
     created_at TEXT NOT NULL
 );
@@ -127,21 +224,19 @@ CREATE TABLE IF NOT EXISTS transactions (
     customer_id TEXT NOT NULL,
     amount REAL NOT NULL,
     currency TEXT NOT NULL DEFAULT 'USD',
-    transaction_type TEXT NOT NULL, -- TRANSFER, CARD_PAYMENT, ATM_WITHDRAWAL, MERCHANT_PAYMENT, REFUND
-    payment_channel TEXT NOT NULL, -- ONLINE, MOBILE_APP, ATM, POS, WIRE
+    transaction_type TEXT NOT NULL,
+    payment_channel TEXT NOT NULL,
     merchant_id TEXT,
     device_id TEXT,
     ip_address TEXT,
-    status TEXT NOT NULL DEFAULT 'COMPLETED', -- COMPLETED, PENDING, FAILED, REVERSED
+    status TEXT NOT NULL DEFAULT 'COMPLETED',
     scenario_id TEXT,
-    dataset_source TEXT DEFAULT 'INDIA_SIMULATOR',
-    is_ground_truth_fraud INTEGER DEFAULT 0, -- STRICTLY SEPARATE DEMO TRUTH
+    dataset_source TEXT DEFAULT 'SAML_D',
+    is_ground_truth_fraud INTEGER DEFAULT 0,
     ground_truth_label TEXT,
     risk_score REAL DEFAULT 0.0,
-    risk_band TEXT DEFAULT 'ROUTINE', -- ROUTINE, LOW, ELEVATED, HIGH
-    created_at TEXT NOT NULL,
-    FOREIGN KEY (source_account_id) REFERENCES accounts(id),
-    FOREIGN KEY (customer_id) REFERENCES customers(id)
+    risk_band TEXT DEFAULT 'ROUTINE',
+    created_at TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS alerts (
@@ -151,18 +246,14 @@ CREATE TABLE IF NOT EXISTS alerts (
     account_id TEXT NOT NULL,
     customer_id TEXT NOT NULL,
     severity TEXT NOT NULL, -- LOW, MEDIUM, HIGH, CRITICAL
-    status TEXT NOT NULL DEFAULT 'NEW', -- NEW, TRIAGED, IN_REVIEW, DISMISSED, CONVERTED_TO_INVESTIGATION
+    status TEXT NOT NULL DEFAULT 'NEW',
     risk_score REAL NOT NULL,
     title TEXT NOT NULL,
     summary TEXT NOT NULL,
     assigned_to TEXT,
     dismissal_reason TEXT,
     created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL,
-    FOREIGN KEY (transaction_id) REFERENCES transactions(id),
-    FOREIGN KEY (account_id) REFERENCES accounts(id),
-    FOREIGN KEY (customer_id) REFERENCES customers(id),
-    FOREIGN KEY (assigned_to) REFERENCES users(id)
+    updated_at TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS alert_findings (
@@ -174,8 +265,7 @@ CREATE TABLE IF NOT EXISTS alert_findings (
     score_contribution REAL NOT NULL,
     feature_values_json TEXT,
     version TEXT NOT NULL,
-    created_at TEXT NOT NULL,
-    FOREIGN KEY (alert_id) REFERENCES alerts(id) ON DELETE CASCADE
+    created_at TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS investigations (
@@ -184,13 +274,13 @@ CREATE TABLE IF NOT EXISTS investigations (
     title TEXT NOT NULL,
     summary TEXT NOT NULL,
     priority TEXT NOT NULL, -- LOW, MEDIUM, HIGH, CRITICAL
-    status TEXT NOT NULL DEFAULT 'NEW', -- NEW, TRIAGED, IN_PROGRESS, PENDING_INFO, PENDING_PEER_REVIEW, RESOLVED, REOPENED
+    status TEXT NOT NULL DEFAULT 'NEW',
     assigned_investigator_id TEXT,
     peer_reviewer_id TEXT,
-    disposition TEXT, -- CONFIRMED_FRAUD, SUSPICIOUS_UNCONFIRMED, LEGITIMATE_ACTIVITY, INCONCLUSIVE, DUPLICATE_CASE, ESCALATED
+    disposition TEXT,
     disposition_rationale TEXT,
     disposition_submitted_at TEXT,
-    peer_review_status TEXT, -- NONE, REQUESTED, APPROVED, REJECTED
+    peer_review_status TEXT DEFAULT 'NONE',
     peer_review_notes TEXT,
     peer_reviewed_at TEXT,
     due_date TEXT,
@@ -198,39 +288,30 @@ CREATE TABLE IF NOT EXISTS investigations (
     model_version TEXT,
     rule_version TEXT,
     created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL,
-    FOREIGN KEY (assigned_investigator_id) REFERENCES users(id),
-    FOREIGN KEY (peer_reviewer_id) REFERENCES users(id)
+    updated_at TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS investigation_alerts (
     investigation_id TEXT NOT NULL,
     alert_id TEXT NOT NULL,
     added_at TEXT NOT NULL,
-    PRIMARY KEY (investigation_id, alert_id),
-    FOREIGN KEY (investigation_id) REFERENCES investigations(id) ON DELETE CASCADE,
-    FOREIGN KEY (alert_id) REFERENCES alerts(id)
+    PRIMARY KEY (investigation_id, alert_id)
 );
 
-CREATE TABLE IF NOT EXISTS investigation_entities (
+CREATE TABLE IF NOT EXISTS evidence_items (
     id TEXT PRIMARY KEY,
     investigation_id TEXT NOT NULL,
-    entity_type TEXT NOT NULL, -- CUSTOMER, ACCOUNT, MERCHANT, DEVICE, IP
-    entity_id TEXT NOT NULL,
-    role_in_case TEXT NOT NULL, -- PRIMARY_SUBJECT, COUNTERPARTY, INTERMEDIARY, BENEFICIARY, SHARED_DEVICE
-    added_at TEXT NOT NULL,
-    FOREIGN KEY (investigation_id) REFERENCES investigations(id) ON DELETE CASCADE
-);
-
-CREATE TABLE IF NOT EXISTS investigation_notes (
-    id TEXT PRIMARY KEY,
-    investigation_id TEXT NOT NULL,
-    author_id TEXT NOT NULL,
-    content TEXT NOT NULL,
-    is_confidential INTEGER DEFAULT 0,
-    created_at TEXT NOT NULL,
-    FOREIGN KEY (investigation_id) REFERENCES investigations(id) ON DELETE CASCADE,
-    FOREIGN KEY (author_id) REFERENCES users(id)
+    evidence_type TEXT NOT NULL,
+    source_record_id TEXT,
+    description TEXT NOT NULL,
+    observed_facts_json TEXT NOT NULL,
+    associated_entities_json TEXT,
+    associated_transactions_json TEXT,
+    verification_status TEXT NOT NULL DEFAULT 'SUPPORTING',
+    collector TEXT NOT NULL,
+    integrity_hash TEXT,
+    storage_file_path TEXT,
+    created_at TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS investigation_tasks (
@@ -241,65 +322,32 @@ CREATE TABLE IF NOT EXISTS investigation_tasks (
     is_completed INTEGER DEFAULT 0,
     completed_by TEXT,
     completed_at TEXT,
-    evidence_id TEXT,
-    created_at TEXT NOT NULL,
-    FOREIGN KEY (investigation_id) REFERENCES investigations(id) ON DELETE CASCADE
+    created_at TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS evidence_items (
+CREATE TABLE IF NOT EXISTS investigation_notes (
     id TEXT PRIMARY KEY,
     investigation_id TEXT NOT NULL,
-    evidence_type TEXT NOT NULL, -- TRANSACTION, BEHAVIORAL_ANOMALY, RULE_MATCH, RELATIONSHIP, FUND_FLOW, ACCOUNT_HISTORY, TIMELINE_EVENT, NOTE, CONTRADICTORY
-    source_record_id TEXT,
-    description TEXT NOT NULL,
-    observed_facts_json TEXT NOT NULL,
-    associated_entities_json TEXT,
-    associated_transactions_json TEXT,
-    verification_status TEXT NOT NULL DEFAULT 'SUPPORTING', -- SUPPORTING, CONTRADICTORY, UNVERIFIED, NOT_RELEVANT
-    collector TEXT NOT NULL, -- AGENT, ANALYST
-    integrity_hash TEXT,
-    created_at TEXT NOT NULL,
-    FOREIGN KEY (investigation_id) REFERENCES investigations(id) ON DELETE CASCADE
-);
-
-CREATE TABLE IF NOT EXISTS entity_relationships (
-    id TEXT PRIMARY KEY,
-    source_entity_type TEXT NOT NULL,
-    source_entity_id TEXT NOT NULL,
-    target_entity_type TEXT NOT NULL,
-    target_entity_id TEXT NOT NULL,
-    relationship_type TEXT NOT NULL, -- OWNS, TRANSFERS_TO, USES_DEVICE, PAYS_MERCHANT, SHARES_BENEFICIARY, SHARES_IP
-    weight REAL DEFAULT 1.0,
-    metadata_json TEXT,
-    last_seen_at TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS investigation_events (
-    id TEXT PRIMARY KEY,
-    investigation_id TEXT NOT NULL,
-    event_type TEXT NOT NULL,
-    description TEXT NOT NULL,
-    actor_id TEXT,
-    metadata_json TEXT,
-    created_at TEXT NOT NULL,
-    FOREIGN KEY (investigation_id) REFERENCES investigations(id) ON DELETE CASCADE
+    author_id TEXT NOT NULL,
+    content TEXT NOT NULL,
+    is_confidential INTEGER DEFAULT 0,
+    created_at TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS analyst_feedback (
     id TEXT PRIMARY KEY,
-    investigation_id TEXT NOT NULL,
+    investigation_id TEXT,
+    transaction_id TEXT,
     analyst_id TEXT NOT NULL,
     disposition TEXT NOT NULL,
-    rationale TEXT NOT NULL,
-    evidence_reviewed_count INTEGER NOT NULL,
-    is_eligible_for_training INTEGER NOT NULL, -- Controlled label policy check
-    training_label INTEGER, -- 1 for fraud, 0 for false positive, NULL for excluded
+    rationale TEXT,
+    evidence_reviewed_count INTEGER DEFAULT 1,
+    is_eligible_for_training INTEGER DEFAULT 1,
+    training_label INTEGER,
     exclusion_reason TEXT,
     model_version TEXT,
     rule_version TEXT,
-    created_at TEXT NOT NULL,
-    FOREIGN KEY (investigation_id) REFERENCES investigations(id),
-    FOREIGN KEY (analyst_id) REFERENCES users(id)
+    created_at TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS detection_rules (
@@ -307,7 +355,7 @@ CREATE TABLE IF NOT EXISTS detection_rules (
     rule_code TEXT UNIQUE NOT NULL,
     name TEXT NOT NULL,
     description TEXT NOT NULL,
-    category TEXT NOT NULL, -- VELOCITY, AMOUNT, NETWORK, DEVICE, TEMPORAL
+    category TEXT NOT NULL,
     severity TEXT NOT NULL DEFAULT 'HIGH',
     is_enabled INTEGER NOT NULL DEFAULT 1,
     thresholds_json TEXT NOT NULL,
@@ -317,51 +365,15 @@ CREATE TABLE IF NOT EXISTS detection_rules (
     updated_at TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS detection_rule_versions (
-    id TEXT PRIMARY KEY,
-    rule_id TEXT NOT NULL,
-    version INTEGER NOT NULL,
-    thresholds_json TEXT NOT NULL,
-    modified_by TEXT NOT NULL,
-    change_reason TEXT,
-    created_at TEXT NOT NULL,
-    FOREIGN KEY (rule_id) REFERENCES detection_rules(id)
-);
-
 CREATE TABLE IF NOT EXISTS model_versions (
     id TEXT PRIMARY KEY,
-    version_tag TEXT UNIQUE NOT NULL,
+    version_tag TEXT NOT NULL,
     model_type TEXT NOT NULL,
     is_active INTEGER NOT NULL DEFAULT 0,
-    evaluation_metrics_json TEXT,
-    parameters_json TEXT,
+    evaluation_metrics_json TEXT NOT NULL,
+    parameters_json TEXT NOT NULL,
     promoted_by TEXT,
     promoted_at TEXT,
-    created_at TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS model_evaluations (
-    id TEXT PRIMARY KEY,
-    candidate_version TEXT NOT NULL,
-    active_version TEXT NOT NULL,
-    dataset_version TEXT NOT NULL,
-    sample_size INTEGER NOT NULL,
-    precision_val REAL,
-    recall_val REAL,
-    f1_val REAL,
-    pr_auc REAL,
-    status TEXT NOT NULL, -- PASSED, REJECTED
-    reason TEXT NOT NULL,
-    evaluated_at TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS training_dataset_versions (
-    id TEXT PRIMARY KEY,
-    version_tag TEXT UNIQUE NOT NULL,
-    sample_count INTEGER NOT NULL,
-    positive_count INTEGER NOT NULL,
-    negative_count INTEGER NOT NULL,
-    features_list_json TEXT NOT NULL,
     created_at TEXT NOT NULL
 );
 
@@ -376,54 +388,6 @@ CREATE TABLE IF NOT EXISTS audit_events (
     metadata_json TEXT,
     created_at TEXT NOT NULL
 );
-
-CREATE TABLE IF NOT EXISTS notifications (
-    id TEXT PRIMARY KEY,
-    recipient_user_id TEXT,
-    title TEXT NOT NULL,
-    message TEXT NOT NULL,
-    link TEXT,
-    is_read INTEGER DEFAULT 0,
-    created_at TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS simulation_scenarios (
-    id TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
-    scenario_type TEXT NOT NULL, -- RAPID_MOVEMENT, CONNECTED_NETWORK, LEGITIMATE_UNUSUAL, INVESTIGATION_FEEDBACK
-    description TEXT NOT NULL,
-    config_json TEXT NOT NULL,
-    created_at TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS simulation_runs (
-    id TEXT PRIMARY KEY,
-    scenario_id TEXT,
-    status TEXT NOT NULL DEFAULT 'IDLE', -- RUNNING, PAUSED, COMPLETED, STOPPED
-    events_emitted INTEGER DEFAULT 0,
-    alerts_triggered INTEGER DEFAULT 0,
-    started_at TEXT,
-    ended_at TEXT
-);
-
-CREATE TABLE IF NOT EXISTS idempotency_keys (
-    key TEXT PRIMARY KEY,
-    action_type TEXT NOT NULL,
-    response_json TEXT NOT NULL,
-    created_at TEXT NOT NULL
-);
-
--- Essential Performance & Query Indexes
-CREATE INDEX IF NOT EXISTS idx_txn_account ON transactions(source_account_id, created_at);
-CREATE INDEX IF NOT EXISTS idx_txn_created ON transactions(created_at);
-CREATE INDEX IF NOT EXISTS idx_txn_risk ON transactions(risk_score, risk_band);
-CREATE INDEX IF NOT EXISTS idx_alerts_status ON alerts(status, severity);
-CREATE INDEX IF NOT EXISTS idx_inv_status ON investigations(status, priority);
-CREATE INDEX IF NOT EXISTS idx_inv_assignee ON investigations(assigned_investigator_id);
-CREATE INDEX IF NOT EXISTS idx_evidence_inv ON evidence_items(investigation_id);
-CREATE INDEX IF NOT EXISTS idx_rel_source ON entity_relationships(source_entity_type, source_entity_id);
-CREATE INDEX IF NOT EXISTS idx_rel_target ON entity_relationships(target_entity_type, target_entity_id);
-CREATE INDEX IF NOT EXISTS idx_audit_time ON audit_events(created_at);
 """
 
 def init_db():
@@ -432,22 +396,11 @@ def init_db():
         if hasattr(conn, "executescript"):
             conn.executescript(SCHEMA_SQL)
             cursor = conn.cursor()
-            # Ensure system users exist for copilot and automated agents
             cursor.execute("PRAGMA table_info(transactions)")
             txn_cols = [c[1] for c in cursor.fetchall()]
             if "dataset_source" not in txn_cols:
                 cursor.execute("ALTER TABLE transactions ADD COLUMN dataset_source TEXT DEFAULT 'INDIA_SIMULATOR'")
-            cursor.execute("SELECT id FROM users WHERE id = 'SYSTEM_COPILOT'")
-            if not cursor.fetchone():
-                now = "2026-01-01T00:00:00Z"
-                cursor.execute("""
-                    INSERT OR IGNORE INTO users (id, username, email, full_name, role, hashed_password, is_active, created_at)
-                    VALUES 
-                    ('SYSTEM_COPILOT', 'system_copilot', 'copilot@sentinelflow.bank', 'SentinelFlow AI Copilot', 'investigator', 'pbkdf2_sha256$29000$demo', 1, ?),
-                    ('USR-SYS-01', 'system_agent', 'agent@sentinelflow.bank', 'Automated Triage Agent', 'investigator', 'pbkdf2_sha256$29000$demo', 1, ?),
-                    ('USR-INV-01', 'sarah_investigator', 'sarah.lin@sentinelflow.bank', 'Sarah Lin', 'investigator', 'pbkdf2_sha256$29000$demo', 1, ?)
-                """, (now, now, now))
             conn.commit()
         else:
-            logger.info("Connected to Supabase PostgreSQL database. Schema managed via scripts/supabase_schema.sql.")
+            logger.info("Connected to Supabase PostgreSQL database. Schema managed via migrations.")
     logger.info("Database schema initialized successfully.")

@@ -2,9 +2,25 @@ import os
 from typing import List
 from pydantic import BaseModel
 
+# Automatically load .env file from project root if present
+_env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), ".env")
+if os.path.exists(_env_path):
+    try:
+        with open(_env_path, "r", encoding="utf-8") as _f:
+            for _line in _f:
+                _line = _line.strip()
+                if _line and not _line.startswith("#") and "=" in _line:
+                    _k, _v = _line.split("=", 1)
+                    _k = _k.strip()
+                    _v = _v.strip().strip("'").strip('"')
+                    if _k not in os.environ:
+                        os.environ[_k] = _v
+    except Exception:
+        pass
+
 class Settings(BaseModel):
     PROJECT_NAME: str = "SentinelFlow AI — The Self-Directed Fraud Investigation Platform"
-    VERSION: str = "1.0.0"
+    VERSION: str = "2.0.0"
     API_V1_STR: str = "/api/v1"
     
     # Environment
@@ -16,12 +32,15 @@ class Settings(BaseModel):
     # Database URL: default SQLite with path resolution, or Supabase PostgreSQL
     DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./sentinelflow.db")
     
-    # Supabase Integration (Database, Auth, Storage, Email)
+    # Supabase Integration (Database, Auth, Storage)
     SUPABASE_URL: str = os.getenv("SUPABASE_URL", "")
-    SUPABASE_ANON_KEY: str = os.getenv("SUPABASE_ANON_KEY", "")
-    SUPABASE_SERVICE_ROLE_KEY: str = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
+    SUPABASE_PUBLISHABLE_KEY: str = os.getenv("SUPABASE_PUBLISHABLE_KEY", os.getenv("SUPABASE_ANON_KEY", ""))
+    SUPABASE_SECRET_KEY: str = os.getenv("SUPABASE_SECRET_KEY", os.getenv("SUPABASE_SERVICE_ROLE_KEY", ""))
     SUPABASE_JWT_SECRET: str = os.getenv("SUPABASE_JWT_SECRET", "")
     SUPABASE_STORAGE_BUCKET: str = os.getenv("SUPABASE_STORAGE_BUCKET", "evidence-files")
+    SUPABASE_DATASETS_BUCKET: str = os.getenv("SUPABASE_DATASETS_BUCKET", "sentinelflow-datasets")
+    SUPABASE_PROCESSED_BUCKET: str = os.getenv("SUPABASE_PROCESSED_BUCKET", "sentinelflow-processed")
+    SUPABASE_MODELS_BUCKET: str = os.getenv("SUPABASE_MODELS_BUCKET", "sentinelflow-models")
     
     # Security & Auth
     SECRET_KEY: str = os.getenv("SECRET_KEY", "sentinelflow_super_secret_demo_key_9874123")
@@ -33,10 +52,11 @@ class Settings(BaseModel):
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "http://localhost:8000",
-        "http://127.0.0.1:8000"
+        "http://127.0.0.1:8000",
+        "https://sentinelflow-ljlk.onrender.com"
     ]
     
-    # Risk Ensemble Weights (configurable, defaults from spec)
+    # Risk Ensemble Weights
     RULE_ENGINE_WEIGHT: float = float(os.getenv("RULE_ENGINE_WEIGHT", "0.30"))
     BEHAVIORAL_ANOMALY_WEIGHT: float = float(os.getenv("BEHAVIORAL_ANOMALY_WEIGHT", "0.25"))
     SUPERVISED_MODEL_WEIGHT: float = float(os.getenv("SUPERVISED_MODEL_WEIGHT", "0.25"))

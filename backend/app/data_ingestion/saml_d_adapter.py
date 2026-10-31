@@ -57,13 +57,18 @@ class SamlDAdapter(BaseDatasetAdapter):
     def inspect_schema(self, source_path: str) -> Dict[str, Any]:
         """Inspects CSV / Parquet header and estimated record count without full RAM load."""
         if not os.path.exists(source_path):
-            return {
-                "dataset": self.dataset_name,
-                "status": "NOT_FOUND",
-                "canonical_columns": SAML_D_CANONICAL_COLUMNS,
-                "label_fields_detected": ["Is_laundering", "Laundering_type"],
-                "security_status": "PROTECTED_ISOLATION_ACTIVE"
-            }
+            base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+            real_fallback = os.path.join(base_dir, "data", "saml_d", "saml_d_real.csv")
+            if os.path.exists(real_fallback):
+                source_path = real_fallback
+            else:
+                return {
+                    "dataset": self.dataset_name,
+                    "status": "NOT_FOUND",
+                    "canonical_columns": SAML_D_CANONICAL_COLUMNS,
+                    "label_fields_detected": ["Is_laundering", "Laundering_type"],
+                    "security_status": "PROTECTED_ISOLATION_ACTIVE"
+                }
 
         if source_path.endswith(".parquet"):
             import pyarrow.parquet as pq
@@ -94,9 +99,14 @@ class SamlDAdapter(BaseDatasetAdapter):
     ) -> Generator[List[Dict[str, Any]], None, None]:
         """Streams records in chunked batches from disk."""
         if not os.path.exists(source_path):
-            logger.warning(f"SAML-D file not found at {source_path}. Generating verified benchmark sample batch.")
-            yield self.generate_verification_sample(count=max_records or 200)
-            return
+            base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+            real_fallback = os.path.join(base_dir, "data", "saml_d", "saml_d_real.csv")
+            if os.path.exists(real_fallback):
+                source_path = real_fallback
+            else:
+                logger.warning(f"SAML-D file not found at {source_path}. Generating verified benchmark sample batch.")
+                yield self.generate_verification_sample(count=max_records or 200)
+                return
 
         if source_path.endswith(".parquet"):
             import pyarrow.parquet as pq
@@ -159,20 +169,33 @@ class SamlDAdapter(BaseDatasetAdapter):
                 src_acc = str(det_row.get("Sender_account") or det_row.get("source_account_id"))
                 dest_acc = str(det_row.get("Receiver_account") or det_row.get("destination_account_id"))
                 amt = float(det_row.get("Amount") or det_row.get("amount", 0.0))
-                pay_curr = str(det_row.get("Payment_currency") or det_row.get("currency", "USD")).upper()
-                rcv_curr = str(det_row.get("Received_currency") or pay_curr).upper()
+                
+                raw_pay_curr = str(det_row.get("Payment_currency") or det_row.get("currency", "USD"))
+                raw_rcv_curr = str(det_row.get("Received_currency") or raw_pay_curr)
+                pay_curr = CurrencyConversionService.normalize_currency_code(raw_pay_curr)
+                rcv_curr = CurrencyConversionService.normalize_currency_code(raw_rcv_curr)
+
                 src_country = str(det_row.get("Sender_bank_location") or det_row.get("sender_country", "USA"))
                 dest_country = str(det_row.get("Receiver_bank_location") or det_row.get("receiver_country", src_country))
                 pay_type = str(det_row.get("Payment_type") or det_row.get("payment_type", "TRANSFER"))
-                date_val = str(det_row.get("Date") or det_row.get("created_at") or datetime.now(timezone.utc).isoformat())
+                
+                # Timestamp parsing with optional Time field
+                d_val = str(det_row.get("Date") or det_row.get("created_at") or "").strip()
+                t_val = str(det_row.get("Time") or "").strip()
+                if d_val and t_val:
+                    date_val = f"{d_val}T{t_val}Z" if "T" not in d_val else d_val
+                elif d_val:
+                    date_val = d_val if "T" in d_val else f"{d_val}T00:00:00Z"
+                else:
+                    date_val = datetime.now(timezone.utc).isoformat()
 
                 txn_id = f"SAML-{uuid.uuid4().hex[:12]}"
 
                 # 3. Currency Conversion Handling
                 conv_info = CurrencyConversionService.convert_amount(
                     amount=amt,
-                    from_currency=pay_curr if CurrencyConversionService.is_supported(pay_curr) else "USD",
-                    to_currency=rcv_curr if CurrencyConversionService.is_supported(rcv_curr) else "USD",
+                    from_currency=pay_curr,
+                    to_currency=rcv_curr,
                     timestamp=date_val
                 )
 

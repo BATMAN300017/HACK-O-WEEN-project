@@ -1,4 +1,5 @@
 import json
+from app.utils.json_utils import safe_json_loads
 import sqlite3
 from typing import List, Dict, Any
 
@@ -101,7 +102,7 @@ def evaluate_rules(conn: sqlite3.Connection, txn: Dict[str, Any], features: Dict
     
     for row in rows:
         r_id, code, name, desc, cat, severity, thresh_json, ver = row
-        thresholds = json.loads(thresh_json)
+        thresholds = safe_json_loads(thresh_json, {})
         is_hit = False
         evidence_fact = {}
         contrib = 0.0

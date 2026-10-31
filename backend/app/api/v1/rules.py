@@ -3,6 +3,7 @@ from pydantic import BaseModel
 import sqlite3
 import json
 from typing import Optional, Dict, Any
+from app.utils.json_utils import safe_json_loads
 from app.api.dependencies import get_db, require_permission
 from app.core.permissions import Permission
 from app.utils.time import utc_now_iso
@@ -27,7 +28,7 @@ def list_detection_rules(db: sqlite3.Connection = Depends(get_db)):
     rules = []
     for r in cursor.fetchall():
         d = dict(r)
-        d["thresholds"] = json.loads(d.get("thresholds_json") or "{}")
+        d["thresholds"] = safe_json_loads(d.get("thresholds_json"), {})
         rules.append(d)
     return rules
 

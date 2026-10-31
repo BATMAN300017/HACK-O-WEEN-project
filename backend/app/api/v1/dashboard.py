@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 import sqlite3
 import json
+from app.utils.json_utils import safe_json_loads
 from app.api.dependencies import get_db
 from app.services.analytics_service import get_kpi_summary, get_analytics_trends
 
@@ -26,6 +27,6 @@ def get_recent_activity(db: sqlite3.Connection = Depends(get_db)):
     activities = []
     for r in rows:
         d = dict(r)
-        d["metadata"] = json.loads(d.get("metadata_json") or "{}")
+        d["metadata"] = safe_json_loads(d.get("metadata_json"), {})
         activities.append(d)
     return activities

@@ -20,8 +20,8 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Copy application source tree
 COPY . .
 
-# Pre-seed the database so container is fully populated on first boot
-RUN python scripts/seed_demo_data.py || true
+# Pre-seed the database with real SAML-D & NFPC records so container is fully populated on first boot
+RUN python scripts/seed_saml_and_nfpc.py || true
 
 EXPOSE 8000
 

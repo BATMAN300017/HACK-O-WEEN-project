@@ -4,6 +4,7 @@ import hashlib
 from typing import Dict, Any, List, Optional
 from app.utils.ids import generate_evidence_id
 from app.utils.time import utc_now_iso
+from app.utils.json_utils import safe_json_loads
 
 def create_evidence(conn: sqlite3.Connection, data: Dict[str, Any]) -> Dict[str, Any]:
     ev_id = data.get("id") or generate_evidence_id()
@@ -49,9 +50,9 @@ def list_evidence_for_case(conn: sqlite3.Connection, investigation_id: str) -> L
     items = []
     for r in rows:
         d = dict(r)
-        d["observed_facts"] = json.loads(d.get("observed_facts_json") or "{}")
-        d["associated_entities"] = json.loads(d.get("associated_entities_json") or "[]")
-        d["associated_transactions"] = json.loads(d.get("associated_transactions_json") or "[]")
+        d["observed_facts"] = safe_json_loads(d.get("observed_facts_json"), {})
+        d["associated_entities"] = safe_json_loads(d.get("associated_entities_json"), [])
+        d["associated_transactions"] = safe_json_loads(d.get("associated_transactions_json"), [])
         items.append(d)
     return items
 

@@ -57,44 +57,61 @@ def get_analytics_trends(conn: sqlite3.Connection) -> Dict[str, Any]:
     """)
     b_row = cursor.fetchone()
     risk_distribution = [
-        {"band": "Routine (0-24)", "count": b_row[0] or 0},
-        {"band": "Low (25-49)", "count": b_row[1] or 0},
-        {"band": "Elevated (50-74)", "count": b_row[2] or 0},
-        {"band": "High (75-100)", "count": b_row[3] or 0},
+        {"band": "Routine (0-24)", "count": int(b_row[0] or 0)},
+        {"band": "Low (25-49)", "count": int(b_row[1] or 0)},
+        {"band": "Elevated (50-74)", "count": int(b_row[2] or 0)},
+        {"band": "High (75-100)", "count": int(b_row[3] or 0)},
     ]
     
     # Case outcomes
     cursor.execute("""
-        SELECT disposition, COUNT(*)
+        SELECT disposition, COUNT(*) as cnt
         FROM investigations
         WHERE disposition IS NOT NULL
         GROUP BY disposition
     """)
-    outcomes = [{"disposition": r[0], "count": r[1]} for r in cursor.fetchall()]
+    outcomes = [{"disposition": r[0], "count": int(r[1])} for r in cursor.fetchall()]
     
     # Status breakdown
     cursor.execute("""
-        SELECT status, COUNT(*)
+        SELECT status, COUNT(*) as cnt
         FROM investigations
         GROUP BY status
     """)
-    status_breakdown = [{"status": r[0], "count": r[1]} for r in cursor.fetchall()]
+    status_breakdown = [{"status": r[0], "count": int(r[1])} for r in cursor.fetchall()]
     
     # Alert source counts
     cursor.execute("""
-        SELECT source, COUNT(*)
+        SELECT source, COUNT(*) as cnt
         FROM alert_findings
         GROUP BY source
     """)
-    sources = [{"source": r[0], "count": r[1]} for r in cursor.fetchall()]
+    sources = [{"source": r[0], "count": int(r[1])} for r in cursor.fetchall()]
+
+    # Transaction types breakdown
+    cursor.execute("""
+        SELECT transaction_type, COUNT(*) as cnt
+        FROM transactions
+        GROUP BY transaction_type
+        ORDER BY cnt DESC LIMIT 6
+    """)
+    tx_types = [{"type": r[0], "count": int(r[1])} for r in cursor.fetchall()]
+
+    # Top datasets
+    cursor.execute("""
+        SELECT dataset_source, COUNT(*) as cnt
+        FROM transactions
+        GROUP BY dataset_source
+    """)
+    ds_breakdown = [{"dataset": r[0], "count": int(r[1])} for r in cursor.fetchall()]
     
     return {
-        "volume_by_hour": [{"hour": "10:00", "count": 120}, {"hour": "11:00", "count": 210}, {"hour": "12:00", "count": 315}],
-        "alerts_by_hour": [{"hour": "10:00", "count": 4}, {"hour": "11:00", "count": 9}, {"hour": "12:00", "count": 14}],
         "risk_score_distribution": risk_distribution,
-        "alerts_by_source": sources or [{"source": "RULE", "count": 12}, {"source": "ANOMALY", "count": 8}, {"source": "GRAPH", "count": 6}],
-        "case_outcomes": outcomes or [{"disposition": "CONFIRMED_FRAUD", "count": 6}, {"disposition": "LEGITIMATE_ACTIVITY", "count": 4}],
-        "investigation_status_breakdown": status_breakdown
+        "alerts_by_source": sources,
+        "case_outcomes": outcomes,
+        "investigation_status_breakdown": status_breakdown,
+        "transaction_types": tx_types,
+        "dataset_breakdown": ds_breakdown
     }
 
 def get_rule_performance(conn: sqlite3.Connection) -> List[Dict[str, Any]]:
@@ -104,15 +121,31 @@ def get_rule_performance(conn: sqlite3.Connection) -> List[Dict[str, Any]]:
     results = []
     for r in rules:
         r_id, code, name = r
-        cursor.execute("SELECT COUNT(*) FROM alert_findings WHERE code = ?", (code,))
-        trig = cursor.fetchone()[0]
+        cursor.execute("""
+            SELECT 
+                COUNT(*) as total_trig,
+                SUM(CASE WHEN i.disposition = 'CONFIRMED_FRAUD' THEN 1 ELSE 0 END) as confirmed,
+                SUM(CASE WHEN i.disposition IN ('LEGITIMATE_ACTIVITY', 'FALSE_POSITIVE') THEN 1 ELSE 0 END) as fp
+            FROM alert_findings af
+            JOIN alerts a ON af.alert_id = a.id
+            LEFT JOIN investigation_alerts ia ON ia.alert_id = a.id
+            LEFT JOIN investigations i ON ia.investigation_id = i.id
+            WHERE af.code = ?
+        """, (code,))
+        row = cursor.fetchone()
+        trig = int(row[0] or 0)
+        confirmed = int(row[1] or 0)
+        fp = int(row[2] or 0)
+        total_eval = confirmed + fp
+        precision = round(confirmed / total_eval, 4) if total_eval > 0 else None
+
         results.append({
             "rule_code": code,
             "rule_name": name,
             "trigger_count": trig,
-            "confirmed_fraud_count": max(0, int(trig * 0.4)),
-            "false_positive_count": max(0, int(trig * 0.2)),
-            "precision": 0.67 if trig > 0 else None,
+            "confirmed_fraud_count": confirmed,
+            "false_positive_count": fp,
+            "precision": precision,
             "is_sufficient_sample": trig >= 10
         })
     return results

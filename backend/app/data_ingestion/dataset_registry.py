@@ -26,15 +26,15 @@ class DatasetRegistry:
                 cursor.execute("""
                     SELECT COUNT(*), MIN(created_at), MAX(created_at)
                     FROM transactions
-                    WHERE dataset_source = ?
-                """, (key,))
+                    WHERE dataset_source = ? OR (dataset_source = 'NFPC' AND ? = 'NFPC_MULE')
+                """, (key, key))
                 row = cursor.fetchone()
                 txn_count = row[0] if row else 0
                 earliest = row[1] if row and row[1] else "N/A"
                 latest = row[2] if row and row[2] else "N/A"
 
                 # Check isolated protected label count
-                labels = get_protected_evaluation_labels(dataset_name=key)
+                labels = get_protected_evaluation_labels(dataset_name="NFPC" if key == "NFPC_MULE" else key)
                 protected_txn_labels = len(labels.get("transactions", {}))
                 protected_acc_labels = len(labels.get("accounts", {}))
                 protected_scen_labels = len(labels.get("scenarios", {}))

@@ -1,0 +1,11 @@
+{
+  "dataset_name": "NFPC",
+  "description": "National Fraud Prevention Center - Indian Banking Mule Account Dataset",
+  "format": "Parquet",
+  "partition_records": 1000000,
+  "labeled_accounts": 96091,
+  "confirmed_mule_accounts": 2683,
+  "currency": "INR",
+  "license": "Research & AML Evaluation",
+  "uploaded_at": "2026-10-31T08:15:35.453847+00:00"
+}

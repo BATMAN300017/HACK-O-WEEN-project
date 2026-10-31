@@ -1,0 +1,12 @@
+{
+  "model_version": "v1.0.0",
+  "model_type": "RandomForestClassifier",
+  "training_samples": 20000,
+  "positive_samples": 25,
+  "precision": 1.0,
+  "recall": 1.0,
+  "f1": 1.0,
+  "pr_auc": 1.0,
+  "status": "PROMOTED",
+  "evaluated_at": "2026-10-31T08:15:43.560254+00:00"
+}

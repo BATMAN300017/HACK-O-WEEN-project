@@ -1,5 +1,6 @@
 import sqlite3
 import json
+from app.utils.json_utils import safe_json_loads
 from typing import Dict, Any, List, Optional, Tuple
 from app.utils.ids import generate_alert_id
 from app.utils.time import utc_now_iso
@@ -45,7 +46,7 @@ def get_alert_by_id(conn: sqlite3.Connection, alert_id: str) -> Optional[Dict[st
     findings = []
     for f_row in cursor.fetchall():
         f_dict = dict(f_row)
-        f_dict["feature_values"] = json.loads(f_dict.get("feature_values_json") or "{}")
+        f_dict["feature_values"] = safe_json_loads(f_dict.get("feature_values_json"), {})
         findings.append(f_dict)
     d["findings"] = findings
     return d
