@@ -1,20 +1,30 @@
+
 services:
   - type: web
-    name: sentinelflow-ai
-    env: docker
-    dockerfilePath: Dockerfile
-    plan: free
-    healthCheckPath: /health
+    name: sentinelflow
+    runtime: docker
+    plan: starter
     envVars:
-      - key: ENVIRONMENT
-        value: production
-      - key: SECRET_KEY
-        generateValue: true
       - key: SUPABASE_URL
-        value: https://dyipyfvbqoqbjwcqlrqy.supabase.co
-      - key: SUPABASE_PUBLISHABLE_KEY
-        value: sb_publishable_U9p5ODjTXCY3mn_8GC9qcA_v1p2CHe_
+        sync: false
+
       - key: SUPABASE_SECRET_KEY
-        value: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+
       - key: DATABASE_URL
-        value: postgresql://postgres:eDHVobOYWA95JG9u@db.dyipyfvbqoqbjwcqlrqy.supabase.co:5432/postgres
+        sync: false
+
+  - type: worker
+    name: sentinelflow-worker
+    runtime: docker
+    plan: starter
+    dockerCommand: python -m backend.worker
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+
+      - key: SUPABASE_SECRET_KEY
+        sync: false
+
+      - key: DATABASE_URL
+        sync: false
