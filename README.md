@@ -58,9 +58,6 @@ Open your browser at: **[http://localhost:8000/](http://localhost:8000/)** (or `
 
 Interactive Swagger API Documentation: **[http://localhost:8000/docs](http://localhost:8000/docs)**.
 
----
-I will soon deploy this in a website, till then you can run it on your local computer
-
 ## 5. Development Credentials for Local Demo
 
 | Username | Password | Role | Permissions |
