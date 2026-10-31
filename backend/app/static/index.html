@@ -1790,11 +1790,11 @@
                         <tr>
                             <td class="px-5 py-3 font-bold text-text-primary">${d.dataset_name}</td>
                             <td class="px-5 py-3 text-primary font-bold">${d.evaluation_granularity}</td>
-                            <td class="px-5 py-3 text-status-success font-bold">${m.precision ? (m.precision * 100).toFixed(1) + '%' : 'N/A'}</td>
-                            <td class="px-5 py-3 text-status-success font-bold">${m.recall ? (m.recall * 100).toFixed(1) + '%' : 'N/A'}</td>
-                            <td class="px-5 py-3 text-primary font-bold">${m.f1_score ? (m.f1_score * 100).toFixed(1) + '%' : 'N/A'}</td>
-                            <td class="px-5 py-3 text-status-warning font-bold">${m.false_positive_rate ? (m.false_positive_rate * 100).toFixed(2) + '%' : 'N/A'}</td>
-                            <td class="px-5 py-3 text-text-primary font-bold">${m.pr_auc ? m.pr_auc.toFixed(3) : 'N/A'}</td>
+                            <td class="px-5 py-3 text-status-success font-bold">${m.precision != null ? (m.precision * 100).toFixed(1) + '%' : '0.0%'}</td>
+                            <td class="px-5 py-3 text-status-success font-bold">${m.recall != null ? (m.recall * 100).toFixed(1) + '%' : '0.0%'}</td>
+                            <td class="px-5 py-3 text-primary font-bold">${m.f1_score != null ? (m.f1_score * 100).toFixed(1) + '%' : '0.0%'}</td>
+                            <td class="px-5 py-3 text-status-warning font-bold">${m.false_positive_rate != null ? (m.false_positive_rate * 100).toFixed(2) + '%' : '0.00%'}</td>
+                            <td class="px-5 py-3 text-text-primary font-bold">${m.pr_auc != null ? m.pr_auc.toFixed(3) : (m.roc_auc != null ? m.roc_auc.toFixed(3) : '-')}</td>
                         </tr>
                     `;
                 }).join('');
@@ -2764,10 +2764,18 @@
                 const simulationCards = [];
 
                 datasets.forEach(d => {
-                    const txns = d.ingested_transactions_count || 0;
-                    const labels = d.protected_labels_count || 0;
+                    const txns = Number(d.ingested_transactions_count) || 0;
+                    const rawLabels = d.protected_labels_count;
+                    let labelCount = 0;
+                    if (typeof rawLabels === 'object' && rawLabels !== null) {
+                        labelCount = (Number(rawLabels.transactions) || 0) +
+                                     (Number(rawLabels.accounts) || 0) +
+                                     (Number(rawLabels.scenarios) || 0);
+                    } else if (typeof rawLabels === 'number') {
+                        labelCount = rawLabels;
+                    }
                     totalTxns += txns;
-                    totalProtectedLabels += labels;
+                    totalProtectedLabels += labelCount;
 
                     const cardHtml = `
                         <div class="bg-surface-card rounded-xl border border-surface-border p-4 space-y-3 transition hover:border-primary/40">
@@ -2789,7 +2797,7 @@
                                 </div>
                                 <div class="flex justify-between">
                                     <span class="text-text-muted">Protected Labels:</span>
-                                    <span class="font-bold text-status-warning">${Number(labels).toLocaleString()}</span>
+                                    <span class="font-bold text-status-warning">${Number(labelCount).toLocaleString()}</span>
                                 </div>
                                 <div class="flex justify-between">
                                     <span class="text-text-muted">Granularity:</span>
@@ -3160,8 +3168,10 @@
             }
         }
 
-        // Initialize on boot
+        // Initialize on boot: overview, dataset lab registry, and pre-warm live stream
         refreshDashboard();
+        loadDatasetLab();
+        loadDatasetTransactions();
     </script>
 </body>
 </html>

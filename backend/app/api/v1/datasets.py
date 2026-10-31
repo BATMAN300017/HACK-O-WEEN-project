@@ -128,6 +128,9 @@ def inspect_dataset_schema(req: SchemaInspectRequest):
     return SchemaInspector.inspect_file(req.file_path, req.sample_rows)
 
 def _persist_canonical_records(conn, txns: list, dataset_name: str):
+    from app.detection.engine import score_transaction
+    from app.repositories.alert_repository import create_alert
+    from app.utils.ids import generate_alert_id
     cursor = conn.cursor()
     for txn in txns:
         src = txn["source_account_id"]
@@ -138,40 +141,99 @@ def _persist_canonical_records(conn, txns: list, dataset_name: str):
 
         # 1. Insert source customer & account
         cursor.execute("""
-            INSERT OR IGNORE INTO customers (id, customer_ref, full_name, email, risk_tier, kyc_status, created_at)
+            INSERT INTO customers (id, customer_ref, full_name, email, risk_tier, kyc_status, created_at)
             VALUES (?, ?, ?, ?, 'STANDARD', 'VERIFIED', ?)
+            ON CONFLICT (id) DO NOTHING;
         """, (cust_id, f"REF-{cust_id}", f"Holder {cust_id}", f"{cust_id}@domain.net", created_at))
         cursor.execute("""
-            INSERT OR IGNORE INTO accounts (id, account_number, customer_id, currency, created_at)
+            INSERT INTO accounts (id, account_number, customer_id, currency, created_at)
             VALUES (?, ?, ?, ?, ?)
+            ON CONFLICT (id) DO NOTHING;
         """, (src, src, cust_id, curr, created_at))
 
         # 2. Insert destination customer & account if present
         if dest:
             dest_cust_id = f"CUST-{dest}"
             cursor.execute("""
-                INSERT OR IGNORE INTO customers (id, customer_ref, full_name, email, risk_tier, kyc_status, created_at)
+                INSERT INTO customers (id, customer_ref, full_name, email, risk_tier, kyc_status, created_at)
                 VALUES (?, ?, ?, ?, 'STANDARD', 'VERIFIED', ?)
+                ON CONFLICT (id) DO NOTHING;
             """, (dest_cust_id, f"REF-{dest_cust_id}", f"Holder {dest}", f"{dest}@domain.net", created_at))
             cursor.execute("""
-                INSERT OR IGNORE INTO accounts (id, account_number, customer_id, currency, created_at)
+                INSERT INTO accounts (id, account_number, customer_id, currency, created_at)
                 VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT (id) DO NOTHING;
             """, (dest, dest, dest_cust_id, curr, created_at))
 
-        # 3. Insert transaction
+        # 3. Score transaction through hybrid engine
+        scoring_res = None
+        risk_score = 0.0
+        risk_band = "ROUTINE"
+        try:
+            scoring_res = score_transaction(conn, {
+                "id": txn["id"],
+                "source_account_id": src,
+                "destination_account_id": dest,
+                "customer_id": cust_id,
+                "amount": float(txn["amount"]),
+                "currency": curr,
+                "transaction_type": txn.get("transaction_type", "TRANSFER"),
+                "payment_channel": txn.get("payment_channel", "TRANSFER"),
+                "status": txn.get("status", "COMPLETED"),
+                "created_at": created_at
+            })
+            risk_score = float(scoring_res.get("final_risk_score", 0.0))
+            risk_band = scoring_res.get("risk_band", "ROUTINE")
+        except Exception as e:
+            logger.warning(f"Scoring fallback for {txn['id']}: {e}")
+            risk_score = 0.0
+            risk_band = "ROUTINE"
+
+        # 4. Insert transaction with evaluated risk score & band
         cursor.execute("""
-            INSERT OR IGNORE INTO transactions (
+            INSERT INTO transactions (
                 id, event_id, source_account_id, destination_account_id, customer_id,
                 amount, currency, transaction_type, payment_channel, status,
-                dataset_source, is_ground_truth_fraud, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
+                dataset_source, is_ground_truth_fraud, risk_score, risk_band, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)
+            ON CONFLICT (id) DO UPDATE SET
+                risk_score = EXCLUDED.risk_score,
+                risk_band = EXCLUDED.risk_band;
         """, (
             txn["id"], txn.get("event_id", f"EVT-{txn['id']}"), src, dest,
             cust_id,
             txn["amount"], curr, txn.get("transaction_type", "TRANSFER"),
             txn.get("payment_channel", "TRANSFER"), txn.get("status", "COMPLETED"),
-            dataset_name, created_at
+            dataset_name, risk_score, risk_band, created_at
         ))
+
+        # 5. Create alert if high risk and no duplicate alert exists
+        if scoring_res and (risk_score >= 50.0 or len(scoring_res.get("triggered_rules", [])) > 0):
+            cursor.execute("SELECT id FROM alerts WHERE transaction_id = ? LIMIT 1;", (txn["id"],))
+            if not cursor.fetchone():
+                alt_id = generate_alert_id()
+                findings = []
+                for r in scoring_res.get("triggered_rules", []):
+                    findings.append({
+                        "source": "RULE", "code": r["rule_code"], "description": r["description"],
+                        "score_contribution": r["score_contribution"], "version": r.get("version", "v1.0")
+                    })
+                title = f"Alert: {dataset_name} High Priority Suspicious Flow"
+                if scoring_res.get("triggered_rules"):
+                    title = f"Alert: {scoring_res['triggered_rules'][0]['name']}"
+                create_alert(conn, {
+                    "id": alt_id,
+                    "transaction_id": txn["id"],
+                    "account_id": src,
+                    "customer_id": cust_id,
+                    "severity": scoring_res.get("recommended_severity", "MEDIUM"),
+                    "status": "NEW",
+                    "risk_score": risk_score,
+                    "title": title,
+                    "summary": scoring_res.get("narrative_explanation", f"Suspicious activity detected in {dataset_name} flow."),
+                    "findings": findings
+                })
+
     conn.commit()
 
 @router.post("/ingest", summary="Stream and ingest dataset with strict label isolation")

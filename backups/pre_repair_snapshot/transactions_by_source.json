@@ -1,0 +1,30 @@
+[
+  {
+    "dataset_source": "AML_SIM",
+    "count": 15
+  },
+  {
+    "dataset_source": "ELLIPTIC",
+    "count": 10
+  },
+  {
+    "dataset_source": "IBM_AML",
+    "count": 10
+  },
+  {
+    "dataset_source": "INDIA_SIMULATOR",
+    "count": 882
+  },
+  {
+    "dataset_source": "NFPC",
+    "count": 25000
+  },
+  {
+    "dataset_source": "PAYSIM",
+    "count": 10
+  },
+  {
+    "dataset_source": "SAML_D",
+    "count": 25000
+  }
+]

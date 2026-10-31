@@ -22,7 +22,7 @@ def extract_transaction_features(conn: sqlite3.Connection, txn: Dict[str, Any]) 
     
     # Baseline stats
     history_count = len(history)
-    amounts = [h["amount"] for h in history]
+    amounts = [float(h["amount"]) for h in history]
     
     # Account dormancy check
     cursor.execute("SELECT is_dormant, created_at FROM accounts WHERE id = ?", (source_acc,))
@@ -39,8 +39,8 @@ def extract_transaction_features(conn: sqlite3.Connection, txn: Dict[str, Any]) 
         WHERE source_account_id = ? AND created_at >= ? AND id != ?
     """, (source_acc, ten_mins_ago, txn.get("id", "")))
     short_vel_row = cursor.fetchone()
-    short_window_count = short_vel_row[0] + 1
-    short_window_sum = short_vel_row[1] + txn_amount
+    short_window_count = int(short_vel_row[0]) + 1
+    short_window_sum = float(short_vel_row[1]) + txn_amount
     
     # Rapid Inbound followed by Outbound check (last 30 mins)
     thirty_mins_ago = (datetime.now(timezone.utc) - timedelta(minutes=30)).isoformat()
