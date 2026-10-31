@@ -30,7 +30,7 @@ from datetime import datetime, timezone
 
 SUPPORTED_CURRENCIES = {
     "INR", "USD", "EUR", "AED", "GBP", "SGD", "CHF", "CAD",
-    "AUD", "JPY", "MXN", "NGN", "PKR", "TRY", "ALL", "MAD"
+    "AUD", "JPY", "MXN", "NGN", "PKR", "TRY", "ALL", "MAD", "BTC"
 }
 
 CURRENCY_NAME_MAP: Dict[str, str] = {
@@ -82,7 +82,9 @@ CURRENCY_NAME_MAP: Dict[str, str] = {
     "ALBANIAN LEK": "ALL",
     "ALL": "ALL",
     "MOROCCAN DIRHAM": "MAD",
-    "MAD": "MAD"
+    "MAD": "MAD",
+    "BITCOIN": "BTC",
+    "BTC": "BTC"
 }
 
 # Base currency for normalized risk comparison
@@ -105,7 +107,8 @@ HISTORICAL_EXCHANGE_RATES: Dict[str, Dict[str, Any]] = {
     "TRY": {"rate_to_inr": 2.45, "source": "TCMB_HISTORICAL", "timestamp": "2024-06-30T12:00:00Z"},
     "ALL": {"rate_to_inr": 0.90, "source": "BOA_HISTORICAL", "timestamp": "2024-06-30T12:00:00Z"},
     "MAD": {"rate_to_inr": 8.35, "source": "BAM_HISTORICAL", "timestamp": "2024-06-30T12:00:00Z"},
-    "INR": {"rate_to_inr": 1.0, "source": "DOMESTIC_PARITY", "timestamp": "2024-06-30T12:00:00Z"}
+    "INR": {"rate_to_inr": 1.0, "source": "DOMESTIC_PARITY", "timestamp": "2024-06-30T12:00:00Z"},
+    "BTC": {"rate_to_inr": 5400000.0, "source": "COINGECKO_HISTORICAL", "timestamp": "2024-06-30T12:00:00Z"}
 }
 
 class IncompatibleCurrencyError(Exception):

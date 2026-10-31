@@ -72,7 +72,10 @@ class MuleNetworkEngine:
                 self.graph.add_node(dest, currency=curr, is_dormant=False, total_inflow=0.0, total_outflow=0.0)
 
             # Amount in base INR for graph comparison
-            norm_amt = CurrencyConversionService.normalize_to_base(float(amt), curr, ts)
+            try:
+                norm_amt = CurrencyConversionService.normalize_to_base(float(amt), curr, ts)
+            except Exception:
+                norm_amt = float(amt)
 
             self.graph.nodes[src]["total_outflow"] = self.graph.nodes[src].get("total_outflow", 0.0) + norm_amt
             self.graph.nodes[dest]["total_inflow"] = self.graph.nodes[dest].get("total_inflow", 0.0) + norm_amt

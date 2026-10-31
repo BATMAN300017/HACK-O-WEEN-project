@@ -52,6 +52,95 @@ def post_train_candidate(
 ):
     return execute_candidate_training(db, current_user.get("full_name", "Senior Analyst"))
 
+from pydantic import BaseModel
+from app.learning.promotion_service import ModelPromotionService
+
+class PolicyUpdateRequest(BaseModel):
+    mode: Optional[str] = "MANUAL"
+    min_precision: Optional[float] = 0.70
+    min_recall: Optional[float] = 0.65
+    min_pr_auc: Optional[float] = 0.75
+    max_fpr: Optional[float] = 0.05
+    min_f1: Optional[float] = 0.70
+    require_independent_validation: Optional[bool] = True
+    min_evaluation_samples: Optional[int] = 20
+    is_active: Optional[bool] = True
+
+class ModelApprovalRequest(BaseModel):
+    rationale: Optional[str] = "Approved by authorized analyst after evaluation review"
+
+class ModelRetireRequest(BaseModel):
+    reason: Optional[str] = "Model retired from production scoring"
+
+@router.get("/promotion-policy", summary="Get model promotion policy configuration")
+def get_promotion_policy(db: sqlite3.Connection = Depends(get_db)):
+    return ModelPromotionService.get_promotion_policy(db)
+
+@router.put("/promotion-policy", summary="Update model promotion policy (Manual or Automatic with thresholds)")
+def update_promotion_policy(
+    req: PolicyUpdateRequest,
+    current_user: dict = Depends(require_permission(Permission.PROMOTE_MODEL)),
+    db: sqlite3.Connection = Depends(get_db)
+):
+    actor = current_user.get("full_name") or current_user.get("username", "Admin")
+    return ModelPromotionService.update_promotion_policy(db, req.model_dump(), actor)
+
+@router.get("/models", summary="List all models with lifecycle status")
+def list_models(db: sqlite3.Connection = Depends(get_db)):
+    cursor = db.cursor()
+    cursor.execute("""
+        SELECT id, model_name, version, is_active, status, approval_status,
+               approved_by, approved_at, promoted_by, promoted_at,
+               evaluation_metrics_json, created_at
+        FROM model_versions
+        ORDER BY created_at DESC
+    """)
+    rows = cursor.fetchall()
+    models = []
+    for r in rows:
+        d = dict(r) if hasattr(r, "keys") else {
+            "id": r[0], "model_name": r[1], "version": r[2], "is_active": bool(r[3]),
+            "status": r[4], "approval_status": r[5] if len(r) > 5 else "APPROVED",
+            "approved_by": r[6] if len(r) > 6 else None, "approved_at": str(r[7]) if len(r) > 7 and r[7] else None,
+            "promoted_by": r[8] if len(r) > 8 else None, "promoted_at": str(r[9]) if len(r) > 9 and r[9] else None,
+            "evaluation_metrics": safe_json_loads(r[10], {}) if len(r) > 10 else {}, "created_at": str(r[11]) if len(r) > 11 else ""
+        }
+        models.append(d)
+    return models
+
+@router.post("/models/{model_version}/approve", summary="Manually approve evaluated model")
+def approve_model(
+    model_version: str,
+    req: ModelApprovalRequest = ModelApprovalRequest(),
+    current_user: dict = Depends(require_permission(Permission.PROMOTE_MODEL)),
+    db: sqlite3.Connection = Depends(get_db)
+):
+    actor = current_user.get("full_name") or current_user.get("username", "Senior Analyst")
+    return ModelPromotionService.approve_model_manually(db, model_version, actor, req.rationale)
+
+@router.post("/models/{model_version}/activate", summary="Activate approved model for operational scoring")
+def activate_model(
+    model_version: str,
+    current_user: dict = Depends(require_permission(Permission.PROMOTE_MODEL)),
+    db: sqlite3.Connection = Depends(get_db)
+):
+    actor = current_user.get("full_name") or current_user.get("username", "Fraud Admin")
+    return ModelPromotionService.activate_model(db, model_version, actor)
+
+@router.post("/models/{model_version}/retire", summary="Retire model from production scoring")
+def retire_model(
+    model_version: str,
+    req: ModelRetireRequest = ModelRetireRequest(),
+    current_user: dict = Depends(require_permission(Permission.PROMOTE_MODEL)),
+    db: sqlite3.Connection = Depends(get_db)
+):
+    actor = current_user.get("full_name") or current_user.get("username", "Admin")
+    return ModelPromotionService.retire_model(db, model_version, actor, req.reason)
+
+@router.get("/promotion-audit", summary="Get model promotion and approval audit history")
+def get_promotion_audit(limit: int = Query(50, ge=1, le=200), db: sqlite3.Connection = Depends(get_db)):
+    return ModelPromotionService.get_promotion_audit_trail(db, limit)
+
 @router.post("/promote-candidate")
 def post_promote_candidate(
     current_user: dict = Depends(require_permission(Permission.PROMOTE_MODEL)),

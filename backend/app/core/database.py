@@ -157,23 +157,24 @@ def get_db_connection() -> Generator[Any, None, None]:
                         except Exception as e2:
                             connection_error = e2
 
-            if conn is not None:
-                wrapped = PostgresConnectionWrapper(conn)
-                try:
-                    yield wrapped
-                    conn.commit()
-                except Exception:
-                    conn.rollback()
-                    raise
-                finally:
-                    conn.close()
-                return
-            else:
+            if conn is None:
                 logger.error(f"PostgreSQL connection error: {connection_error}. Falling back to SQLite.")
         except ImportError:
             logger.warning("psycopg2 driver not installed in current environment; using SQLite for local queries while Supabase Auth & Storage remain active.")
         except Exception as e:
             logger.error(f"PostgreSQL connection error: {e}. Falling back to SQLite.")
+
+        if conn is not None:
+            wrapped = PostgresConnectionWrapper(conn)
+            try:
+                yield wrapped
+                conn.commit()
+            except Exception:
+                conn.rollback()
+                raise
+            finally:
+                conn.close()
+            return
 
     # Local SQLite Connection
     db_path = get_db_path()
@@ -409,6 +410,34 @@ CREATE TABLE IF NOT EXISTS model_versions (
     parameters_json TEXT NOT NULL,
     promoted_by TEXT,
     promoted_at TEXT,
+    created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS model_promotion_policy (
+    id TEXT PRIMARY KEY DEFAULT 'current_policy',
+    mode TEXT NOT NULL DEFAULT 'MANUAL',
+    min_precision REAL NOT NULL DEFAULT 0.70,
+    min_recall REAL NOT NULL DEFAULT 0.65,
+    min_pr_auc REAL NOT NULL DEFAULT 0.75,
+    max_fpr REAL NOT NULL DEFAULT 0.05,
+    min_f1 REAL NOT NULL DEFAULT 0.70,
+    require_independent_validation INTEGER NOT NULL DEFAULT 1,
+    min_evaluation_samples INTEGER NOT NULL DEFAULT 20,
+    is_active INTEGER NOT NULL DEFAULT 1,
+    updated_by TEXT DEFAULT 'System Administrator',
+    updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS model_promotion_audit (
+    id TEXT PRIMARY KEY,
+    model_version TEXT NOT NULL,
+    action TEXT NOT NULL,
+    mode TEXT NOT NULL,
+    actor_id TEXT,
+    actor_name TEXT NOT NULL,
+    metrics_evaluated_json TEXT,
+    thresholds_checked_json TEXT,
+    reason TEXT NOT NULL,
     created_at TEXT NOT NULL
 );
 

@@ -150,13 +150,25 @@ def strip_labels_for_detection(record: Dict[str, Any]) -> Tuple[Dict[str, Any], 
 
 def store_protected_transaction_label(
     transaction_id: str,
-    dataset_name: str,
-    is_laundering: Optional[int],
-    laundering_type: Optional[str],
-    raw_labels: Dict[str, Any],
-    timestamp: str
+    dataset_name: str = "DEFAULT",
+    is_laundering: Optional[int] = None,
+    laundering_type: Optional[str] = None,
+    raw_labels: Optional[Dict[str, Any]] = None,
+    timestamp: Optional[str] = None,
+    ground_truth_label: Optional[int] = None,
+    scenario_id: Optional[str] = None
 ):
     """Store transaction ground-truth strictly in the isolated evaluation store."""
+    if is_laundering is None and ground_truth_label is not None:
+        is_laundering = ground_truth_label
+    if laundering_type is None and scenario_id is not None:
+        laundering_type = scenario_id
+    if raw_labels is None:
+        raw_labels = {"label": is_laundering, "scenario": laundering_type}
+    if timestamp is None:
+        from datetime import datetime, timezone
+        timestamp = datetime.now(timezone.utc).isoformat()
+
     init_protected_store()
     db_path = os.path.join(PROTECTED_STORAGE_DIR, "protected_ground_truth.db")
     conn = sqlite3.connect(db_path)

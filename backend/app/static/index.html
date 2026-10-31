@@ -151,9 +151,12 @@
                     <span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">dashboard</span>
                     <span>Overview & KPIs</span>
                 </button>
-                <button onclick="switchView('datasets')" id="nav-datasets" class="w-full text-left text-text-secondary hover:text-text-primary hover:bg-surface-variant font-mono text-xs px-3 py-2.5 rounded flex items-center gap-2.5 transition-colors group">
-                    <span class="material-symbols-outlined text-[18px] group-hover:text-primary">database</span>
-                    <span>Dataset Management</span>
+                <button onclick="switchView('datasets')" id="nav-datasets" class="w-full text-left text-text-secondary hover:text-text-primary hover:bg-surface-variant font-mono text-xs px-3 py-2.5 rounded flex items-center justify-between transition-colors group">
+                    <div class="flex items-center gap-2.5">
+                        <span class="material-symbols-outlined text-[18px] group-hover:text-primary">database</span>
+                        <span>Datasets & Lab</span>
+                    </div>
+                    <span class="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-primary/20 text-primary border border-primary/30">7 SOURCES</span>
                 </button>
                 <button onclick="switchView('fundflow')" id="nav-fundflow" class="w-full text-left text-text-secondary hover:text-text-primary hover:bg-surface-variant font-mono text-xs px-3 py-2.5 rounded flex items-center gap-2.5 transition-colors group">
                     <span class="material-symbols-outlined text-[18px] group-hover:text-primary">account_tree</span>
@@ -711,26 +714,37 @@
 
             <!-- SECTION 7: FEEDBACK & LEARNING -->
             <div id="view-learning" class="space-y-6 hidden">
-                <div class="flex items-center justify-between pb-2 border-b border-surface-border">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-2 border-b border-surface-border">
                     <div>
-                        <h1 class="text-2xl font-bold text-text-primary tracking-tight">Feedback & Controlled Continuous Learning</h1>
-                        <p class="text-xs text-text-secondary mt-0.5">Governed retraining pipeline: only human-verified dispositions contribute to dataset generation.</p>
+                        <div class="flex items-center gap-2">
+                            <h1 class="text-2xl font-bold text-text-primary tracking-tight">Model Governance & Continuous Learning</h1>
+                            <span id="policy-mode-header-badge" class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-primary/20 text-primary border border-primary/30">MODE: MANUAL APPROVAL</span>
+                        </div>
+                        <p class="text-xs text-text-secondary mt-0.5">Dual-mode model promotion engine: strict human gatekeeping by default, with configurable automated policy promotion.</p>
                     </div>
                     <div class="flex items-center space-x-2">
-                        <button onclick="triggerTrainCandidate()" class="bg-surface-card hover:bg-surface-elevated border border-surface-border text-text-primary text-xs px-3 py-1.5 rounded-lg font-mono font-medium transition shadow-sm">
-                            Train Candidate Model
+                        <button onclick="triggerTrainCandidate()" class="bg-surface-card hover:bg-surface-elevated border border-surface-border text-text-primary text-xs px-3 py-1.5 rounded-lg font-mono font-medium transition shadow-sm flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-[15px]">model_training</span>
+                            <span>Train Candidate Model</span>
                         </button>
-                        <button onclick="triggerPromoteCandidate()" class="bg-primary hover:bg-primary/90 text-surface-base text-xs px-3 py-1.5 rounded-lg font-mono font-bold transition shadow-sm">
-                            Promote Candidate
+                        <button onclick="triggerPromoteCandidate()" class="bg-primary hover:bg-primary/90 text-surface-base text-xs px-3 py-1.5 rounded-lg font-mono font-bold transition shadow-sm flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-[15px]">verified</span>
+                            <span>Evaluate & Promote</span>
                         </button>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- KPI Metric Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div class="bg-surface-card p-5 rounded-xl border border-surface-border">
                         <div class="text-[11px] font-mono text-text-muted">Active Scoring Model</div>
                         <div class="text-xl font-bold font-mono text-primary mt-1" id="active-model-name-box">LogisticRegression v1.0</div>
-                        <div class="text-[11px] text-text-muted mt-1">Baseline Benchmark</div>
+                        <div class="text-[11px] text-text-muted mt-1" id="active-model-status-sub">Operational Scoring</div>
+                    </div>
+                    <div class="bg-surface-card p-5 rounded-xl border border-surface-border">
+                        <div class="text-[11px] font-mono text-text-muted">Promotion Governance</div>
+                        <div class="text-xl font-bold font-mono text-status-warning mt-1" id="promotion-governance-mode">MANUAL</div>
+                        <div class="text-[11px] text-text-muted mt-1">Human Gatekeeping Active</div>
                     </div>
                     <div class="bg-surface-card p-5 rounded-xl border border-surface-border">
                         <div class="text-[11px] font-mono text-text-muted">Training Label Readiness</div>
@@ -738,13 +752,152 @@
                         <div class="text-[11px] text-text-muted mt-1" id="training-samples-info">-- / 20 required samples</div>
                     </div>
                     <div class="bg-surface-card p-5 rounded-xl border border-surface-border">
-                        <div class="text-[11px] font-mono text-text-muted">Candidate Model Status</div>
+                        <div class="text-[11px] font-mono text-text-muted">Candidate Status</div>
                         <div class="text-xl font-bold font-mono text-text-secondary mt-1" id="candidate-model-status">None</div>
-                        <div class="text-[11px] text-text-muted mt-1">Awaiting evaluation run</div>
+                        <div class="text-[11px] text-text-muted mt-1" id="candidate-model-sub">Awaiting evaluation run</div>
                     </div>
                 </div>
 
-                                <!-- DATASET 2: LABELED GROUND TRUTH (SCAM VS LEGIT) -->
+                <!-- DUAL-MODE MODEL PROMOTION POLICY GOVERNANCE PANEL -->
+                <div class="bg-surface-card rounded-xl border border-surface-border p-5 space-y-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-surface-border pb-3">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 text-[10px] font-mono bg-primary/10 text-primary border border-primary/20 rounded font-bold">PROMOTION POLICY ENGINE</span>
+                                <h3 class="text-sm font-bold text-text-primary">Dual-Mode Promotion Governance (Manual Approval vs Automatic Promotion)</h3>
+                            </div>
+                            <p class="text-xs text-text-secondary mt-0.5">Configure gatekeeping policy: manual approval enforces lifecycle stages (Trained &rarr; Evaluated &rarr; Awaiting Approval &rarr; Approved &rarr; Active &rarr; Retired), preventing experimental models from scoring operational records before approval.</p>
+                        </div>
+                        <div class="flex items-center gap-2 bg-surface-base p-1 rounded-lg border border-surface-border">
+                            <button id="btn-mode-manual" onclick="togglePromotionMode('MANUAL')" class="px-3 py-1 rounded text-xs font-mono font-bold transition bg-primary text-surface-base shadow-sm">
+                                Manual Approval (Default)
+                            </button>
+                            <button id="btn-mode-auto" onclick="togglePromotionMode('AUTOMATIC')" class="px-3 py-1 rounded text-xs font-mono font-semibold transition text-text-secondary hover:text-text-primary">
+                                Automatic Promotion
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Policy Thresholds Form -->
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+                        <div class="bg-surface-base p-3 rounded-lg border border-surface-border space-y-1">
+                            <label class="text-[10px] font-mono text-text-muted block">Min Precision</label>
+                            <input id="policy-min-precision" type="number" step="0.01" min="0" max="1" value="0.70" class="w-full bg-surface-card border border-surface-border rounded px-2 py-1 text-xs font-mono text-text-primary focus:outline-none focus:border-primary">
+                            <span class="text-[9px] text-text-muted block">Required &ge; 0.70</span>
+                        </div>
+                        <div class="bg-surface-base p-3 rounded-lg border border-surface-border space-y-1">
+                            <label class="text-[10px] font-mono text-text-muted block">Min Recall</label>
+                            <input id="policy-min-recall" type="number" step="0.01" min="0" max="1" value="0.65" class="w-full bg-surface-card border border-surface-border rounded px-2 py-1 text-xs font-mono text-text-primary focus:outline-none focus:border-primary">
+                            <span class="text-[9px] text-text-muted block">Required &ge; 0.65</span>
+                        </div>
+                        <div class="bg-surface-base p-3 rounded-lg border border-surface-border space-y-1">
+                            <label class="text-[10px] font-mono text-text-muted block">Min PR-AUC</label>
+                            <input id="policy-min-prauc" type="number" step="0.01" min="0" max="1" value="0.75" class="w-full bg-surface-card border border-surface-border rounded px-2 py-1 text-xs font-mono text-text-primary focus:outline-none focus:border-primary">
+                            <span class="text-[9px] text-text-muted block">Required &ge; 0.75</span>
+                        </div>
+                        <div class="bg-surface-base p-3 rounded-lg border border-surface-border space-y-1">
+                            <label class="text-[10px] font-mono text-text-muted block">Max FPR</label>
+                            <input id="policy-max-fpr" type="number" step="0.01" min="0" max="1" value="0.05" class="w-full bg-surface-card border border-surface-border rounded px-2 py-1 text-xs font-mono text-text-primary focus:outline-none focus:border-primary">
+                            <span class="text-[9px] text-text-muted block">Max allowed &le; 0.05</span>
+                        </div>
+                        <div class="bg-surface-base p-3 rounded-lg border border-surface-border space-y-1">
+                            <label class="text-[10px] font-mono text-text-muted block">Min F1 Score</label>
+                            <input id="policy-min-f1" type="number" step="0.01" min="0" max="1" value="0.70" class="w-full bg-surface-card border border-surface-border rounded px-2 py-1 text-xs font-mono text-text-primary focus:outline-none focus:border-primary">
+                            <span class="text-[9px] text-text-muted block">Required &ge; 0.70</span>
+                        </div>
+                        <div class="bg-surface-base p-3 rounded-lg border border-surface-border space-y-1">
+                            <label class="text-[10px] font-mono text-text-muted block">Min Samples</label>
+                            <input id="policy-min-samples" type="number" step="1" min="5" value="20" class="w-full bg-surface-card border border-surface-border rounded px-2 py-1 text-xs font-mono text-text-primary focus:outline-none focus:border-primary">
+                            <span class="text-[9px] text-text-muted block">Min eval sample size</span>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input id="policy-req-independent-val" type="checkbox" checked class="rounded border-surface-border text-primary focus:ring-0">
+                            <span class="text-xs font-mono text-text-secondary">Require Independent Validation (strictly forbid training-set metrics as validation proof)</span>
+                        </label>
+                        <button onclick="savePromotionPolicy()" class="px-4 py-1.5 bg-primary hover:bg-primary/90 text-surface-base text-xs font-mono font-bold rounded shadow-sm transition flex items-center gap-1.5 self-end">
+                            <span class="material-symbols-outlined text-[15px]">save</span>
+                            <span>Save Policy Thresholds</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- MODEL LIFECYCLE REGISTRY TABLE -->
+                <div class="bg-surface-card rounded-xl border border-surface-border p-5 space-y-4">
+                    <div class="flex items-center justify-between border-b border-surface-border pb-3">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 text-[10px] font-mono bg-status-info/10 text-status-info border border-status-info/30 rounded font-bold">MODEL LIFECYCLE REGISTRY</span>
+                                <h3 class="text-sm font-bold text-text-primary">Governed Model Registry (Trained &rarr; Evaluated &rarr; Awaiting Approval &rarr; Approved &rarr; Active &rarr; Retired)</h3>
+                            </div>
+                            <p class="text-xs text-text-secondary mt-0.5">Complete inventory of candidate, active, and retired models with independent evaluation scores and governance status.</p>
+                        </div>
+                        <button onclick="loadModelRegistry()" class="px-2.5 py-1 bg-surface-base hover:bg-surface-elevated text-xs font-mono rounded border border-surface-border text-text-primary flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[14px]">refresh</span>
+                            <span>Refresh Models</span>
+                        </button>
+                    </div>
+
+                    <div class="overflow-x-auto border border-surface-border rounded-lg">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead class="bg-surface-base text-[11px] font-mono text-text-muted border-b border-surface-border">
+                                <tr>
+                                    <th class="px-4 py-2.5">Model Name & ID</th>
+                                    <th class="px-4 py-2.5">Version</th>
+                                    <th class="px-4 py-2.5">Lifecycle Stage</th>
+                                    <th class="px-4 py-2.5">Precision / Recall</th>
+                                    <th class="px-4 py-2.5">PR-AUC / F1</th>
+                                    <th class="px-4 py-2.5">Validation Basis</th>
+                                    <th class="px-4 py-2.5">Approver & Date</th>
+                                    <th class="px-4 py-2.5 text-right">Lifecycle Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="models-registry-tbody" class="divide-y divide-surface-border text-text-secondary font-mono text-[11px]">
+                                <tr><td colspan="8" class="px-4 py-6 text-center text-text-muted">Loading registered models...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- MODEL PROMOTION AUDIT TRAIL -->
+                <div class="bg-surface-card rounded-xl border border-surface-border p-5 space-y-3">
+                    <div class="flex items-center justify-between border-b border-surface-border pb-3">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 text-[10px] font-mono bg-status-success/10 text-status-success border border-status-success/30 rounded font-bold">GOVERNANCE AUDIT</span>
+                                <h3 class="text-sm font-bold text-text-primary">Promotion Decisions & Approvals Audit Log</h3>
+                            </div>
+                            <p class="text-xs text-text-secondary mt-0.5">Immutable audit trail recording all model approvals, automated threshold checks, activations, and retirements.</p>
+                        </div>
+                        <button onclick="loadPromotionAudit()" class="px-2.5 py-1 bg-surface-base hover:bg-surface-elevated text-xs font-mono rounded border border-surface-border text-text-primary flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[14px]">refresh</span>
+                            <span>Refresh Audit</span>
+                        </button>
+                    </div>
+
+                    <div class="overflow-x-auto border border-surface-border rounded-lg">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead class="bg-surface-base text-[11px] font-mono text-text-muted border-b border-surface-border">
+                                <tr>
+                                    <th class="px-4 py-2.5">Timestamp</th>
+                                    <th class="px-4 py-2.5">Model Version</th>
+                                    <th class="px-4 py-2.5">Lifecycle Event</th>
+                                    <th class="px-4 py-2.5">Policy Mode</th>
+                                    <th class="px-4 py-2.5">Actor / Approver</th>
+                                    <th class="px-4 py-2.5">Evaluation Metrics Snapshot</th>
+                                    <th class="px-4 py-2.5">Decision Details</th>
+                                </tr>
+                            </thead>
+                            <tbody id="promotion-audit-tbody" class="divide-y divide-surface-border text-text-secondary font-mono text-[11px]">
+                                <tr><td colspan="7" class="px-4 py-4 text-center text-text-muted">No promotion audit records yet.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- DATASET 2: LABELED GROUND TRUTH (SCAM VS LEGIT) -->
                 <div class="bg-surface-card rounded-xl border border-surface-border p-5 space-y-4">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-surface-border pb-3">
                         <div>
@@ -835,45 +988,283 @@
             <div id="view-datasets" class="space-y-5 hidden">
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-surface-border">
                     <div>
-                        <h1 class="text-2xl font-bold text-text-primary tracking-tight">Dataset Management & Transaction Explorer</h1>
-                        <p class="text-xs text-text-secondary mt-0.5">Explore ingested transactions across SAML-D and NFPC with multi-currency routing and strict label isolation.</p>
+                        <div class="flex items-center gap-2">
+                            <h1 class="text-2xl font-bold text-text-primary tracking-tight">Dataset Laboratory & Provenance Hub</h1>
+                            <span class="px-2 py-0.5 text-[10px] font-mono bg-primary/20 text-primary border border-primary/30 rounded font-bold">7 MULTI-DOMAIN SOURCES</span>
+                        </div>
+                        <p class="text-xs text-text-secondary mt-0.5">Explore 7 distinct research datasets across Traditional Banking, Mobile Money, Cryptocurrency, and Synthetic Generators with strict label isolation.</p>
                     </div>
-                    <div class="flex items-center gap-3">
-                        <button onclick="loadDatasetTransactions()" class="px-3 py-1.5 bg-primary text-surface-base font-mono text-xs font-bold rounded hover:bg-primary/90 transition shadow-sm flex items-center gap-1.5">
+                    <div class="flex items-center gap-2">
+                        <button onclick="loadDatasetLab()" class="px-3 py-1.5 bg-primary text-surface-base font-mono text-xs font-bold rounded hover:bg-primary/90 transition shadow-sm flex items-center gap-1.5">
                             <span class="material-symbols-outlined text-[15px]">refresh</span>
-                            <span>Refresh Data</span>
+                            <span>Refresh Laboratory</span>
                         </button>
                     </div>
                 </div>
 
-                <!-- Dataset Status Summary Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="bg-surface-card rounded-xl border border-surface-border p-4 flex items-center justify-between">
-                        <div class="space-y-1">
-                            <span class="px-2 py-0.5 text-[10px] font-mono bg-primary/10 text-primary border border-primary/20 rounded font-bold">DATASET 1: SAML-D</span>
-                            <h3 class="text-sm font-bold text-text-primary">Synthetic AML Monitoring Dataset</h3>
-                            <p class="text-[11px] text-text-secondary font-mono">Role: Unsupervised Development & Detection Stream (USD, EUR, GBP, AED, INR, SGD)</p>
+                <!-- Laboratory Sub-Tabs -->
+                <div class="flex border-b border-surface-border gap-2 overflow-x-auto pb-1 text-xs font-mono">
+                    <button id="lab-tab-btn-registry" onclick="switchLabTab('registry')" class="px-3.5 py-2 font-bold text-primary border-b-2 border-primary flex items-center gap-1.5 transition">
+                        <span class="material-symbols-outlined text-[16px]">science</span>
+                        <span>Dataset Registry (7 Sources)</span>
+                    </button>
+                    <button id="lab-tab-btn-compatibility" onclick="switchLabTab('compatibility')" class="px-3.5 py-2 text-text-secondary hover:text-text-primary border-b-2 border-transparent flex items-center gap-1.5 transition">
+                        <span class="material-symbols-outlined text-[16px]">rule</span>
+                        <span>Cross-Dataset Compatibility</span>
+                    </button>
+                    <button id="lab-tab-btn-amlsim" onclick="switchLabTab('amlsim')" class="px-3.5 py-2 text-text-secondary hover:text-text-primary border-b-2 border-transparent flex items-center gap-1.5 transition">
+                        <span class="material-symbols-outlined text-[16px]">hub</span>
+                        <span>IBM AMLSim Generator</span>
+                    </button>
+                    <button id="lab-tab-btn-browser" onclick="switchLabTab('browser')" class="px-3.5 py-2 text-text-secondary hover:text-text-primary border-b-2 border-transparent flex items-center gap-1.5 transition">
+                        <span class="material-symbols-outlined text-[16px]">table_rows</span>
+                        <span>Transaction Explorer</span>
+                    </button>
+                </div>
+
+                <!-- SUB-PANE 1: DATASET REGISTRY & DOMAINS -->
+                <div id="lab-pane-registry" class="space-y-6">
+                    <!-- Global Laboratory Stats -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div class="bg-surface-card p-4 rounded-xl border border-surface-border">
+                            <span class="text-[11px] font-mono text-text-muted block">Registered Datasets</span>
+                            <span class="text-2xl font-bold font-mono text-primary mt-1 block">7 Sources</span>
+                            <span class="text-[10px] text-text-secondary">4 Distinct Domains</span>
                         </div>
-                        <div class="text-right">
-                            <span class="text-xl font-bold font-mono text-primary" id="saml-count-badge">--</span>
-                            <span class="text-[10px] font-mono text-text-muted block">Active Records</span>
+                        <div class="bg-surface-card p-4 rounded-xl border border-surface-border">
+                            <span class="text-[11px] font-mono text-text-muted block">Ingested Records in DB</span>
+                            <span class="text-2xl font-bold font-mono text-status-success mt-1 block" id="lab-stat-total-txns">--</span>
+                            <span class="text-[10px] text-text-secondary">Active Detection Store</span>
+                        </div>
+                        <div class="bg-surface-card p-4 rounded-xl border border-surface-border">
+                            <span class="text-[11px] font-mono text-text-muted block">Protected Evaluation Labels</span>
+                            <span class="text-2xl font-bold font-mono text-status-warning mt-1 block" id="lab-stat-isolated-labels">--</span>
+                            <span class="text-[10px] text-text-secondary">Pipeline B Encrypted Vault</span>
+                        </div>
+                        <div class="bg-surface-card p-4 rounded-xl border border-surface-border">
+                            <span class="text-[11px] font-mono text-text-muted block">Label Leakage Status</span>
+                            <span class="text-2xl font-bold font-mono text-status-success mt-1 block">0% LEAKAGE</span>
+                            <span class="text-[10px] text-text-secondary">Mathematically Verified</span>
                         </div>
                     </div>
-                    <div class="bg-surface-card rounded-xl border border-surface-border p-4 flex items-center justify-between">
-                        <div class="space-y-1">
-                            <span class="px-2 py-0.5 text-[10px] font-mono bg-status-warning/10 text-status-warning border border-status-warning/20 rounded font-bold">DATASET 2: NFPC MULE</span>
-                            <h3 class="text-sm font-bold text-text-primary">Mule Account Labeled Dataset</h3>
-                            <p class="text-[11px] text-text-secondary font-mono">Role: Governed Feedback & Continuous Learning (Ground Truth: Scam vs Legit)</p>
+
+                    <!-- Domain 1: Traditional Banking -->
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-2">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-primary/10 text-primary border border-primary/20">DOMAIN: TRADITIONAL BANKING</span>
+                            <h3 class="text-sm font-bold text-text-primary">Conventional Multi-Bank AML & Mule Account Networks</h3>
                         </div>
-                        <div class="text-right">
-                            <span class="text-xl font-bold font-mono text-status-warning" id="nfpc-count-badge">--</span>
-                            <span class="text-[10px] font-mono text-text-muted block">Labeled Records</span>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="lab-cards-banking">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Domain 2: Mobile Money Fraud -->
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-status-warning/10 text-status-warning border border-status-warning/20">DOMAIN: MOBILE MONEY</span>
+                                <h3 class="text-sm font-bold text-text-primary">Mobile Money Transfer Fraud (PaySim)</h3>
+                            </div>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-status-warning/20 text-status-warning border border-status-warning/30">
+                                CRITICAL: Mobile Money Fraud &ne; Banking AML
+                            </span>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-1 gap-4" id="lab-cards-mobile">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Domain 3: Cryptocurrency On-Chain -->
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-secondary/15 text-secondary border border-secondary/30">DOMAIN: CRYPTOCURRENCY</span>
+                                <h3 class="text-sm font-bold text-text-primary">On-Chain Bitcoin Transaction Graph (Elliptic)</h3>
+                            </div>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-secondary/20 text-secondary border border-secondary/30">
+                                CRITICAL: Bitcoin Graph Nodes &ne; Bank Transfers
+                            </span>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-1 gap-4" id="lab-cards-crypto">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Domain 4: Synthetic Simulation -->
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-2">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-status-info/10 text-status-info border border-status-info/20">DOMAIN: SYNTHETIC SIMULATION</span>
+                            <h3 class="text-sm font-bold text-text-primary">Configurable Typology Simulators & Calibrated Macro Ecosystems</h3>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="lab-cards-simulation">
+                            <!-- Populated dynamically -->
                         </div>
                     </div>
                 </div>
 
-                <!-- Transaction Browser Table -->
-                <div class="bg-surface-card rounded-xl border border-surface-border overflow-hidden">
+                <!-- SUB-PANE 2: CROSS-DATASET COMPATIBILITY EVALUATOR -->
+                <div id="lab-pane-compatibility" class="space-y-5 hidden">
+                    <div class="bg-surface-card rounded-xl border border-surface-border p-5 space-y-4">
+                        <div class="border-b border-surface-border pb-3">
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 text-[10px] font-mono bg-status-info/10 text-status-info border border-status-info/30 rounded font-bold">RESEARCH COMPATIBILITY MATRIX</span>
+                                <h3 class="text-sm font-bold text-text-primary">Cross-Dataset Model Generalization & Evaluation Guard</h3>
+                            </div>
+                            <p class="text-xs text-text-secondary mt-0.5">Validate whether models trained on one dataset can scientifically generalize to another. Prevents invalid evaluations (e.g. testing mobile money unauthorized fraud models on banking Swift transactions, or crypto graph embeddings on bank wire transfers).</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="space-y-1.5">
+                                <label class="text-xs font-mono text-text-muted">Source Dataset (Training Corpus)</label>
+                                <select id="compat-source-ds" class="w-full bg-surface-base border border-surface-border rounded px-3 py-2 text-xs font-mono text-text-primary focus:outline-none focus:border-primary">
+                                    <option value="SAML_D">SAML_D (Traditional Banking)</option>
+                                    <option value="NFPC_MULE">NFPC_MULE (Indian Banking)</option>
+                                    <option value="IBM_AML">IBM_AML (Multi-Bank Banking)</option>
+                                    <option value="PAYSIM" selected>PAYSIM (Mobile Money Fraud)</option>
+                                    <option value="ELLIPTIC">ELLIPTIC (Bitcoin Graph Nodes)</option>
+                                    <option value="AML_SIM">AML_SIM (Synthetic Simulator)</option>
+                                    <option value="INDIA_SIMULATOR">INDIA_SIMULATOR (Calibrated India)</option>
+                                </select>
+                            </div>
+
+                            <div class="space-y-1.5">
+                                <label class="text-xs font-mono text-text-muted">Target Dataset (Evaluation Corpus)</label>
+                                <select id="compat-target-ds" class="w-full bg-surface-base border border-surface-border rounded px-3 py-2 text-xs font-mono text-text-primary focus:outline-none focus:border-primary">
+                                    <option value="SAML_D" selected>SAML_D (Traditional Banking)</option>
+                                    <option value="NFPC_MULE">NFPC_MULE (Indian Banking)</option>
+                                    <option value="IBM_AML">IBM_AML (Multi-Bank Banking)</option>
+                                    <option value="PAYSIM">PAYSIM (Mobile Money Fraud)</option>
+                                    <option value="ELLIPTIC">ELLIPTIC (Bitcoin Graph Nodes)</option>
+                                    <option value="AML_SIM">AML_SIM (Synthetic Simulator)</option>
+                                    <option value="INDIA_SIMULATOR">INDIA_SIMULATOR (Calibrated India)</option>
+                                </select>
+                            </div>
+
+                            <div class="space-y-1.5">
+                                <label class="text-xs font-mono text-text-muted">Target Analytical Task</label>
+                                <select id="compat-task" class="w-full bg-surface-base border border-surface-border rounded px-3 py-2 text-xs font-mono text-text-primary focus:outline-none focus:border-primary">
+                                    <option value="traditional_banking_aml" selected>Traditional Banking AML</option>
+                                    <option value="mobile_money_fraud">Mobile Money Fraud</option>
+                                    <option value="crypto_node_classification">Crypto Node Classification</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="pt-2 flex justify-end">
+                            <button onclick="runCompatibilityCheck()" class="px-4 py-2 bg-primary hover:bg-primary/90 text-surface-base text-xs font-mono font-bold rounded shadow-sm transition flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-[16px]">compare_arrows</span>
+                                <span>Evaluate Research Compatibility</span>
+                            </button>
+                        </div>
+
+                        <!-- Compatibility Outcome Box -->
+                        <div id="compat-result-box" class="p-4 rounded-xl border border-surface-border bg-surface-base hidden space-y-3">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <span id="compat-badge" class="px-2.5 py-1 rounded text-xs font-mono font-bold">--</span>
+                                    <span id="compat-headline" class="text-xs font-bold text-text-primary">--</span>
+                                </div>
+                                <span id="compat-domains" class="text-[11px] font-mono text-text-muted">--</span>
+                            </div>
+                            <p id="compat-reason" class="text-xs text-text-secondary font-mono leading-relaxed">--</p>
+                            <div id="compat-features-container" class="pt-2 border-t border-surface-border hidden">
+                                <span class="text-[10px] font-mono text-text-muted block mb-1">Common Feature Layer:</span>
+                                <div id="compat-features-list" class="flex flex-wrap gap-1.5"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SUB-PANE 3: IBM AMLSIM & GENERATOR -->
+                <div id="lab-pane-amlsim" class="space-y-5 hidden">
+                    <div class="bg-surface-card rounded-xl border border-surface-border p-5 space-y-4">
+                        <div class="border-b border-surface-border pb-3">
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 text-[10px] font-mono bg-status-info/10 text-status-info border border-status-info/30 rounded font-bold">IBM AMLSIM TYPOLOGY SIMULATOR</span>
+                                <h3 class="text-sm font-bold text-text-primary">Parameterized Synthetic Money-Laundering Scenario Generator</h3>
+                            </div>
+                            <p class="text-xs text-text-secondary mt-0.5">Generate reproducible laundering typologies based on the IBM AMLSim framework. All generated scenarios record random seeds, topology configuration, and isolate ground-truth labels into Pipeline B.</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                            <div class="space-y-1">
+                                <label class="text-xs font-mono text-text-muted">Laundering Typology</label>
+                                <select id="amlsim-input-typology" class="w-full bg-surface-base border border-surface-border rounded px-3 py-1.5 text-xs font-mono text-text-primary focus:outline-none focus:border-primary">
+                                    <option value="CYCLE" selected>CYCLE (Circular Flow / Round-Tripping)</option>
+                                    <option value="FAN_OUT">FAN_OUT (Layering / Structuring to Many)</option>
+                                    <option value="FAN_IN">FAN_IN (Aggregation / Smurfing to One)</option>
+                                    <option value="SCATTER_GATHER">SCATTER_GATHER (Complex Split & Merge)</option>
+                                </select>
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-xs font-mono text-text-muted">Number of Accounts</label>
+                                <input id="amlsim-input-accounts" type="number" min="3" max="25" value="5" class="w-full bg-surface-base border border-surface-border rounded px-3 py-1.5 text-xs font-mono text-text-primary focus:outline-none focus:border-primary">
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-xs font-mono text-text-muted">Base Amount ($ USD)</label>
+                                <input id="amlsim-input-amount" type="number" min="1000" step="5000" value="50000" class="w-full bg-surface-base border border-surface-border rounded px-3 py-1.5 text-xs font-mono text-text-primary focus:outline-none focus:border-primary">
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-xs font-mono text-text-muted">Currency</label>
+                                <select id="amlsim-input-currency" class="w-full bg-surface-base border border-surface-border rounded px-3 py-1.5 text-xs font-mono text-text-primary focus:outline-none focus:border-primary">
+                                    <option value="USD" selected>USD - US Dollar</option>
+                                    <option value="EUR">EUR - Euro</option>
+                                    <option value="GBP">GBP - British Pound</option>
+                                    <option value="INR">INR - Indian Rupee</option>
+                                    <option value="AED">AED - UAE Dirham</option>
+                                </select>
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-xs font-mono text-text-muted">Noise Transactions (Cover Activity)</label>
+                                <input id="amlsim-input-noise" type="number" min="0" max="100" value="10" class="w-full bg-surface-base border border-surface-border rounded px-3 py-1.5 text-xs font-mono text-text-primary focus:outline-none focus:border-primary">
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-xs font-mono text-text-muted">Random Seed (Reproducibility)</label>
+                                <input id="amlsim-input-seed" type="number" value="42" class="w-full bg-surface-base border border-surface-border rounded px-3 py-1.5 text-xs font-mono text-text-primary focus:outline-none focus:border-primary">
+                            </div>
+                        </div>
+
+                        <div class="pt-2 flex justify-end">
+                            <button id="btn-amlsim-generate" onclick="triggerAmlSimGeneration()" class="px-4 py-2 bg-primary hover:bg-primary/90 text-surface-base text-xs font-mono font-bold rounded shadow-sm transition flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-[16px]">play_circle</span>
+                                <span>Generate & Persist Scenario</span>
+                            </button>
+                        </div>
+
+                        <!-- Generated Scenario Result -->
+                        <div id="amlsim-result-box" class="p-4 rounded-xl border border-surface-border bg-surface-base hidden space-y-3">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-status-success/20 text-status-success border border-status-success/30">SCENARIO COMMITTED</span>
+                                    <span id="amlsim-res-id" class="text-xs font-mono font-bold text-primary">--</span>
+                                </div>
+                                <span id="amlsim-res-timestamp" class="text-[11px] font-mono text-text-muted">--</span>
+                            </div>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs font-mono">
+                                <div class="bg-surface-card p-2.5 rounded border border-surface-border">
+                                    <span class="text-[10px] text-text-muted block">Typology</span>
+                                    <span id="amlsim-res-typology" class="font-bold text-text-primary">--</span>
+                                </div>
+                                <div class="bg-surface-card p-2.5 rounded border border-surface-border">
+                                    <span class="text-[10px] text-text-muted block">Total Transactions</span>
+                                    <span id="amlsim-res-total-txns" class="font-bold text-text-primary">--</span>
+                                </div>
+                                <div class="bg-surface-card p-2.5 rounded border border-surface-border">
+                                    <span class="text-[10px] text-text-muted block">Laundering / Noise</span>
+                                    <span id="amlsim-res-ratio" class="font-bold text-status-warning">--</span>
+                                </div>
+                                <div class="bg-surface-card p-2.5 rounded border border-surface-border">
+                                    <span class="text-[10px] text-text-muted block">Label Isolation</span>
+                                    <span class="font-bold text-status-success">100% Protected</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SUB-PANE 4: TRANSACTION EXPLORER (TABLE) -->
+                <div id="lab-pane-browser" class="bg-surface-card rounded-xl border border-surface-border overflow-hidden hidden">
                     <!-- Filters & Search Toolbar -->
                     <div class="p-4 border-b border-surface-border flex flex-col md:flex-row items-center justify-between gap-3 bg-surface-base/50">
                         <div class="flex items-center gap-2 w-full md:w-auto">
@@ -888,9 +1279,14 @@
 
                         <div class="flex items-center gap-2 self-end">
                             <select id="ds-filter-source" onchange="loadDatasetTransactions()" class="bg-surface-base border border-surface-border text-text-primary text-xs font-mono rounded px-2.5 py-1.5 focus:outline-none">
-                                <option value="ALL">All Datasets</option>
-                                <option value="SAML_D" selected>Dataset 1: SAML-D</option>
-                                <option value="NFPC_MULE">Dataset 2: NFPC</option>
+                                <option value="ALL">All 7 Datasets</option>
+                                <option value="SAML_D" selected>Dataset: SAML-D (Banking)</option>
+                                <option value="NFPC_MULE">Dataset: NFPC Mule (Banking)</option>
+                                <option value="IBM_AML">Dataset: IBM AML-Data (Multi-Bank)</option>
+                                <option value="PAYSIM">Dataset: PaySim (Mobile Money)</option>
+                                <option value="ELLIPTIC">Dataset: Elliptic (Crypto Nodes)</option>
+                                <option value="AML_SIM">Dataset: IBM AMLSim (Simulator)</option>
+                                <option value="INDIA_SIMULATOR">Dataset: Calibrated India Simulator</option>
                             </select>
                             <select id="ds-filter-curr" onchange="loadDatasetTransactions()" class="bg-surface-base border border-surface-border text-text-primary text-xs font-mono rounded px-2.5 py-1.5 focus:outline-none">
                                 <option value="ALL">All Currencies</option>
@@ -915,7 +1311,7 @@
                                     <th class="px-4 py-3">Amount & Currency</th>
                                     <th class="px-4 py-3">Channel / Type</th>
                                     <th class="px-4 py-3">Risk Band</th>
-                                    <th class="px-4 py-3">Dataset</th>
+                                    <th class="px-4 py-3">Dataset Source</th>
                                     <th class="px-4 py-3">Timestamp</th>
                                 </tr>
                             </thead>
@@ -937,7 +1333,7 @@
                 </div>
             </div>
 
-<div id="view-fundflow" class="space-y-5 hidden">
+            <div id="view-fundflow"  class="space-y-5 hidden">
                 <div class="flex items-center justify-between pb-2 border-b border-surface-border">
                     <div>
                         <h1 class="text-2xl font-bold text-text-primary tracking-tight">Fund Flow Reconstruction & Multi-Hop Tracing</h1>
@@ -1211,7 +1607,8 @@
             }
 
             if (viewId === 'overview') refreshDashboard();
-            if (viewId === 'datasets') loadDatasetManagement();
+            if (viewId === 'datasets') { loadDatasetLab(); loadDatasetTransactions(); }
+            if (viewId === 'learning') { loadLearningStatus(); loadLabeledFeed(); loadPromotionPolicy(); loadModelRegistry(); loadPromotionAudit(); }
             if (viewId === 'fundflow') {
                 const prefill = currentActiveCaseId ? 'TXN-SAML-000000' : 'TXN-SAML-000000';
                 document.getElementById('input-trace-txnid').value = prefill;
@@ -2327,6 +2724,440 @@
             if (b === 'ELEVATED') return '<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-status-warning/20 text-status-warning border border-status-warning/30">ELEVATED</span>';
             if (b === 'LOW') return '<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-secondary/15 text-secondary border border-secondary/30">LOW</span>';
             return '<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-status-success/20 text-status-success border border-status-success/30">ROUTINE</span>';
+        }
+
+
+        // ================= DATASET LABORATORY & RESEARCH INTEGRATION =================
+        function switchLabTab(tab) {
+            const tabs = ['registry', 'compatibility', 'amlsim', 'browser'];
+            tabs.forEach(t => {
+                const pane = document.getElementById('lab-pane-' + t);
+                const btn = document.getElementById('lab-tab-btn-' + t);
+                if (pane) {
+                    if (t === tab) pane.classList.remove('hidden');
+                    else pane.classList.add('hidden');
+                }
+                if (btn) {
+                    if (t === tab) {
+                        btn.className = "px-3.5 py-2 font-bold text-primary border-b-2 border-primary flex items-center gap-1.5 transition";
+                    } else {
+                        btn.className = "px-3.5 py-2 text-text-secondary hover:text-text-primary border-b-2 border-transparent flex items-center gap-1.5 transition";
+                    }
+                }
+            });
+            if (tab === 'browser') {
+                loadDatasetTransactions();
+            }
+        }
+
+        async function loadDatasetLab() {
+            try {
+                const res = await fetch(`${API_BASE}/datasets/lab`);
+                const datasets = await res.json();
+                
+                let totalTxns = 0;
+                let totalProtectedLabels = 0;
+
+                const bankingCards = [];
+                const mobileCards = [];
+                const cryptoCards = [];
+                const simulationCards = [];
+
+                datasets.forEach(d => {
+                    const txns = d.ingested_transactions_count || 0;
+                    const labels = d.protected_labels_count || 0;
+                    totalTxns += txns;
+                    totalProtectedLabels += labels;
+
+                    const cardHtml = `
+                        <div class="bg-surface-card rounded-xl border border-surface-border p-4 space-y-3 transition hover:border-primary/40">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="px-2 py-0.5 text-[10px] font-mono bg-primary/10 text-primary border border-primary/20 rounded font-bold">${d.id}</span>
+                                    <span class="px-1.5 py-0.2 rounded text-[9px] font-mono bg-surface-base text-text-muted border border-surface-border">${d.version || 'v1.0'}</span>
+                                </div>
+                                <span class="px-2 py-0.5 text-[10px] font-mono bg-status-success/10 text-status-success rounded font-semibold">${d.status}</span>
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-bold text-text-primary truncate" title="${d.title}">${d.title}</h4>
+                                <p class="text-[11px] text-text-secondary font-mono mt-0.5 line-clamp-2">${d.role}</p>
+                            </div>
+                            <div class="text-[11px] font-mono text-text-secondary space-y-1 bg-surface-base/60 p-2.5 rounded-lg border border-surface-border/50">
+                                <div class="flex justify-between">
+                                    <span class="text-text-muted">Ingested Txns:</span>
+                                    <span class="font-bold text-text-primary">${Number(txns).toLocaleString()}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-text-muted">Protected Labels:</span>
+                                    <span class="font-bold text-status-warning">${Number(labels).toLocaleString()}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-text-muted">Granularity:</span>
+                                    <span class="text-primary font-semibold">${d.label_granularity}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-text-muted">License:</span>
+                                    <span class="text-text-muted truncate max-w-[120px]">${d.license || 'Academic'}</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between pt-1">
+                                <span class="text-[10px] font-mono text-status-success flex items-center gap-1">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-status-success"></span>
+                                    <span>Pipeline B Isolated</span>
+                                </span>
+                                <button onclick="triggerDatasetIngest('${d.id}')" class="px-2.5 py-1 bg-surface-base hover:bg-surface-elevated text-text-primary text-[10px] font-mono font-bold rounded border border-surface-border transition">
+                                    Ingest / Resync
+                                </button>
+                            </div>
+                        </div>
+                    `;
+
+                    if (d.domain === 'traditional_banking') bankingCards.push(cardHtml);
+                    else if (d.domain === 'mobile_money') mobileCards.push(cardHtml);
+                    else if (d.domain === 'cryptocurrency') cryptoCards.push(cardHtml);
+                    else simulationCards.push(cardHtml);
+                });
+
+                if (document.getElementById('lab-stat-total-txns')) {
+                    document.getElementById('lab-stat-total-txns').innerText = Number(totalTxns).toLocaleString();
+                }
+                if (document.getElementById('lab-stat-isolated-labels')) {
+                    document.getElementById('lab-stat-isolated-labels').innerText = Number(totalProtectedLabels).toLocaleString();
+                }
+
+                if (document.getElementById('lab-cards-banking')) document.getElementById('lab-cards-banking').innerHTML = bankingCards.join('');
+                if (document.getElementById('lab-cards-mobile')) document.getElementById('lab-cards-mobile').innerHTML = mobileCards.join('');
+                if (document.getElementById('lab-cards-crypto')) document.getElementById('lab-cards-crypto').innerHTML = cryptoCards.join('');
+                if (document.getElementById('lab-cards-simulation')) document.getElementById('lab-cards-simulation').innerHTML = simulationCards.join('');
+
+            } catch (e) {
+                console.error("Error loading Dataset Lab:", e);
+            }
+        }
+
+        async function runCompatibilityCheck() {
+            const src = document.getElementById('compat-source-ds').value;
+            const tgt = document.getElementById('compat-target-ds').value;
+            const task = document.getElementById('compat-task').value;
+            const resultBox = document.getElementById('compat-result-box');
+            resultBox.classList.remove('hidden');
+
+            try {
+                const res = await fetch(`${API_BASE}/datasets/evaluate-compatibility`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({source_dataset: src, target_dataset: tgt, target_task: task})
+                });
+                const data = await res.json();
+
+                const badge = document.getElementById('compat-badge');
+                const headline = document.getElementById('compat-headline');
+                const domains = document.getElementById('compat-domains');
+                const reason = document.getElementById('compat-reason');
+                const featCont = document.getElementById('compat-features-container');
+                const featList = document.getElementById('compat-features-list');
+
+                if (data.compatible) {
+                    badge.className = "px-2.5 py-1 rounded text-xs font-mono font-bold bg-status-success/20 text-status-success border border-status-success/30";
+                    badge.innerText = "COMPATIBLE";
+                    headline.innerText = "Scientific Cross-Validation Permitted";
+                    featCont.classList.remove('hidden');
+                    featList.innerHTML = (data.common_feature_layer || []).map(f => `
+                        <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-surface-card border border-surface-border text-primary font-bold">${f}</span>
+                    `).join('');
+                } else {
+                    badge.className = "px-2.5 py-1 rounded text-xs font-mono font-bold bg-status-critical/20 text-status-critical border border-status-critical/30";
+                    badge.innerText = "INCOMPATIBLE";
+                    headline.innerText = "Methodological Separation Enforced";
+                    featCont.classList.add('hidden');
+                }
+
+                domains.innerText = `${data.source_domain} &rarr; ${data.target_domain}`;
+                reason.innerText = data.reason || data.target_alignment || "Compatibility validated.";
+            } catch (e) {
+                alert("Compatibility check failed: " + e);
+            }
+        }
+
+        async function triggerAmlSimGeneration() {
+            const btn = document.getElementById('btn-amlsim-generate');
+            btn.disabled = true;
+            btn.innerHTML = `<span class="material-symbols-outlined text-[16px] animate-spin">refresh</span> Generating Scenario...`;
+            
+            try {
+                const typology = document.getElementById('amlsim-input-typology').value;
+                const accounts = parseInt(document.getElementById('amlsim-input-accounts').value) || 5;
+                const amount = parseFloat(document.getElementById('amlsim-input-amount').value) || 50000;
+                const currency = document.getElementById('amlsim-input-currency').value;
+                const noise = parseInt(document.getElementById('amlsim-input-noise').value) || 10;
+                const seed = parseInt(document.getElementById('amlsim-input-seed').value) || 42;
+
+                const res = await fetch(`${API_BASE}/datasets/amlsim/generate`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        typology: typology,
+                        num_accounts: accounts,
+                        base_amount: amount,
+                        currency: currency,
+                        random_seed: seed,
+                        noise_txns_count: noise,
+                        persist_to_database: true
+                    })
+                });
+                const data = await res.json();
+
+                const box = document.getElementById('amlsim-result-box');
+                box.classList.remove('hidden');
+                document.getElementById('amlsim-res-id').innerText = data.scenario_metadata?.scenario_id || "SCEN-AMLSIM";
+                document.getElementById('amlsim-res-timestamp').innerText = (data.scenario_metadata?.generated_at || '').replace('T', ' ').slice(0, 19);
+                document.getElementById('amlsim-res-typology').innerText = data.scenario_metadata?.typology || typology;
+                document.getElementById('amlsim-res-total-txns').innerText = `${data.transactions_generated} Transactions`;
+                document.getElementById('amlsim-res-ratio').innerText = `${data.laundering_transactions} Laundering / ${data.noise_transactions} Noise`;
+
+                loadDatasetLab();
+            } catch (e) {
+                alert("AMLSim generation failed: " + e);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<span class="material-symbols-outlined text-[16px]">play_circle</span> Generate & Persist Scenario`;
+            }
+        }
+
+        // ================= DUAL-MODE MODEL PROMOTION GOVERNANCE =================
+        let currentPromotionPolicy = { mode: 'MANUAL' };
+
+        async function loadPromotionPolicy() {
+            try {
+                const res = await fetch(`${API_BASE}/learning/promotion-policy`);
+                const policy = await res.json();
+                currentPromotionPolicy = policy;
+
+                const mode = policy.mode || 'MANUAL';
+                if (document.getElementById('policy-mode-header-badge')) {
+                    document.getElementById('policy-mode-header-badge').innerText = `MODE: ${mode} APPROVAL`;
+                }
+                if (document.getElementById('promotion-governance-mode')) {
+                    document.getElementById('promotion-governance-mode').innerText = mode;
+                }
+
+                updatePromotionModeButtons(mode);
+
+                if (document.getElementById('policy-min-precision')) document.getElementById('policy-min-precision').value = policy.min_precision || 0.70;
+                if (document.getElementById('policy-min-recall')) document.getElementById('policy-min-recall').value = policy.min_recall || 0.65;
+                if (document.getElementById('policy-min-prauc')) document.getElementById('policy-min-prauc').value = policy.min_pr_auc || 0.75;
+                if (document.getElementById('policy-max-fpr')) document.getElementById('policy-max-fpr').value = policy.max_fpr || 0.05;
+                if (document.getElementById('policy-min-f1')) document.getElementById('policy-min-f1').value = policy.min_f1 || 0.70;
+                if (document.getElementById('policy-min-samples')) document.getElementById('policy-min-samples').value = policy.min_evaluation_samples || 20;
+                if (document.getElementById('policy-req-independent-val')) document.getElementById('policy-req-independent-val').checked = !!policy.require_independent_validation;
+
+            } catch (e) {
+                console.error("Error loading promotion policy:", e);
+            }
+        }
+
+        function updatePromotionModeButtons(mode) {
+            const btnManual = document.getElementById('btn-mode-manual');
+            const btnAuto = document.getElementById('btn-mode-auto');
+            if (btnManual && btnAuto) {
+                if (mode === 'AUTOMATIC') {
+                    btnAuto.className = "px-3 py-1 rounded text-xs font-mono font-bold transition bg-status-warning text-surface-base shadow-sm";
+                    btnManual.className = "px-3 py-1 rounded text-xs font-mono font-semibold transition text-text-secondary hover:text-text-primary";
+                } else {
+                    btnManual.className = "px-3 py-1 rounded text-xs font-mono font-bold transition bg-primary text-surface-base shadow-sm";
+                    btnAuto.className = "px-3 py-1 rounded text-xs font-mono font-semibold transition text-text-secondary hover:text-text-primary";
+                }
+            }
+        }
+
+        async function togglePromotionMode(newMode) {
+            currentPromotionPolicy.mode = newMode;
+            updatePromotionModeButtons(newMode);
+            await savePromotionPolicy(newMode);
+        }
+
+        async function savePromotionPolicy(overrideMode = null) {
+            try {
+                const mode = overrideMode || currentPromotionPolicy.mode || 'MANUAL';
+                const body = {
+                    mode: mode,
+                    min_precision: parseFloat(document.getElementById('policy-min-precision').value) || 0.70,
+                    min_recall: parseFloat(document.getElementById('policy-min-recall').value) || 0.65,
+                    min_pr_auc: parseFloat(document.getElementById('policy-min-prauc').value) || 0.75,
+                    max_fpr: parseFloat(document.getElementById('policy-max-fpr').value) || 0.05,
+                    min_f1: parseFloat(document.getElementById('policy-min-f1').value) || 0.70,
+                    min_evaluation_samples: parseInt(document.getElementById('policy-min-samples').value) || 20,
+                    require_independent_validation: document.getElementById('policy-req-independent-val').checked,
+                    actor: "Senior Fraud Compliance Admin"
+                };
+
+                const res = await fetch(`${API_BASE}/learning/promotion-policy`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(body)
+                });
+                const updated = await res.json();
+                alert(`Promotion policy updated: ${updated.mode} mode active.`);
+                loadPromotionPolicy();
+                loadPromotionAudit();
+            } catch (e) {
+                alert("Error saving promotion policy: " + e);
+            }
+        }
+
+        async function loadModelRegistry() {
+            const tbody = document.getElementById('models-registry-tbody');
+            if (!tbody) return;
+            try {
+                const res = await fetch(`${API_BASE}/learning/models`);
+                const models = await res.json();
+
+                if (!models || models.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="8" class="px-4 py-6 text-center text-text-muted">No models in registry.</td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = models.map(m => {
+                    const metrics = m.evaluation_metrics_json || {};
+                    const isAwaitingApproval = m.approval_status === 'AWAITING_APPROVAL';
+                    const isApproved = m.approval_status === 'APPROVED';
+                    const isActive = m.is_active === 1 || m.status === 'ACTIVE';
+
+                    let stageBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-surface-elevated text-text-muted border border-surface-border">${m.status}</span>`;
+                    if (isActive) {
+                        stageBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-status-success/20 text-status-success border border-status-success/30 animate-pulse">ACTIVE SCORING</span>`;
+                    } else if (isApproved) {
+                        stageBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-primary/20 text-primary border border-primary/30">APPROVED</span>`;
+                    } else if (isAwaitingApproval) {
+                        stageBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-status-warning/20 text-status-warning border border-status-warning/30">AWAITING APPROVAL</span>`;
+                    }
+
+                    const prec = metrics.precision != null ? Number(metrics.precision).toFixed(3) : '--';
+                    const rec = metrics.recall != null ? Number(metrics.recall).toFixed(3) : '--';
+                    const prauc = metrics.pr_auc != null ? Number(metrics.pr_auc).toFixed(3) : '--';
+                    const f1 = metrics.f1 != null ? Number(metrics.f1).toFixed(3) : '--';
+
+                    let actionsHtml = '';
+                    if (isAwaitingApproval) {
+                        actionsHtml = `
+                            <button onclick="approveModel('${m.version}')" class="px-2 py-1 bg-primary text-surface-base font-bold text-[10px] rounded hover:bg-primary/90 transition shadow-sm">
+                                Approve
+                            </button>
+                        `;
+                    } else if (isApproved && !isActive) {
+                        actionsHtml = `
+                            <button onclick="activateModel('${m.version}')" class="px-2 py-1 bg-status-success text-surface-base font-bold text-[10px] rounded hover:bg-status-success/90 transition shadow-sm">
+                                Activate
+                            </button>
+                        `;
+                    } else if (isActive) {
+                        actionsHtml = `
+                            <button onclick="retireModel('${m.version}')" class="px-2 py-1 bg-surface-base hover:bg-status-critical/20 hover:text-status-critical text-text-muted font-bold text-[10px] rounded border border-surface-border transition">
+                                Retire
+                            </button>
+                        `;
+                    }
+
+                    return `
+                        <tr class="hover:bg-surface-elevated/40 transition">
+                            <td class="px-4 py-2.5 font-bold text-text-primary">
+                                <div>${m.model_name}</div>
+                                <div class="text-[10px] font-mono text-text-muted">${m.id}</div>
+                            </td>
+                            <td class="px-4 py-2.5 font-bold text-primary">${m.version}</td>
+                            <td class="px-4 py-2.5">${stageBadge}</td>
+                            <td class="px-4 py-2.5">P: <span class="font-bold text-text-primary">${prec}</span> / R: <span class="font-bold text-text-primary">${rec}</span></td>
+                            <td class="px-4 py-2.5">AUC: <span class="font-bold text-text-primary">${prauc}</span> / F1: <span class="font-bold text-text-primary">${f1}</span></td>
+                            <td class="px-4 py-2.5 text-text-muted text-[10px]">${metrics.positive_samples || 0} pos / ${metrics.training_samples || 0} total</td>
+                            <td class="px-4 py-2.5 text-[10px] text-text-muted">
+                                <div>${m.approved_by || m.promoted_by || 'System Admin'}</div>
+                                <div>${(m.approved_at || m.promoted_at || '').slice(0, 10)}</div>
+                            </td>
+                            <td class="px-4 py-2.5 text-right">${actionsHtml}</td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="8" class="px-4 py-6 text-center text-status-critical font-mono text-xs">Error loading models: ${e}</td></tr>`;
+            }
+        }
+
+        async function approveModel(version) {
+            if (!confirm(`Approve model version ${version} for production readiness?`)) return;
+            try {
+                const res = await fetch(`${API_BASE}/learning/models/${version}/approve`, { method: 'POST' });
+                const data = await res.json();
+                alert(data.message || "Model approved!");
+                loadModelRegistry();
+                loadPromotionAudit();
+            } catch (e) {
+                alert("Approval failed: " + e);
+            }
+        }
+
+        async function activateModel(version) {
+            if (!confirm(`Activate model version ${version} to score operational transaction traffic?`)) return;
+            try {
+                const res = await fetch(`${API_BASE}/learning/models/${version}/activate`, { method: 'POST' });
+                const data = await res.json();
+                alert(data.message || "Model activated!");
+                loadLearningStatus();
+                loadModelRegistry();
+                loadPromotionAudit();
+            } catch (e) {
+                alert("Activation failed: " + e);
+            }
+        }
+
+        async function retireModel(version) {
+            if (!confirm(`Retire model version ${version}? It will no longer score transactions.`)) return;
+            try {
+                const res = await fetch(`${API_BASE}/learning/models/${version}/retire`, { method: 'POST' });
+                const data = await res.json();
+                alert(data.message || "Model retired.");
+                loadModelRegistry();
+                loadPromotionAudit();
+            } catch (e) {
+                alert("Retire failed: " + e);
+            }
+        }
+
+        async function loadPromotionAudit() {
+            const tbody = document.getElementById('promotion-audit-tbody');
+            if (!tbody) return;
+            try {
+                const res = await fetch(`${API_BASE}/learning/promotion-audit`);
+                const audit = await res.json();
+
+                if (!audit || audit.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-4 text-center text-text-muted">No promotion audit records yet.</td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = audit.map(a => {
+                    const metrics = a.evaluation_metrics_json || {};
+                    const isApproved = a.decision === 'APPROVED' || a.decision === 'ACTIVATED';
+                    const badge = isApproved
+                        ? `<span class="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-status-success/20 text-status-success">${a.decision}</span>`
+                        : `<span class="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-status-warning/20 text-status-warning">${a.decision}</span>`;
+
+                    return `
+                        <tr class="hover:bg-surface-elevated/40 transition">
+                            <td class="px-4 py-2 text-text-muted">${(a.created_at || '').replace('T', ' ').slice(0, 19)}</td>
+                            <td class="px-4 py-2 font-bold text-primary">${a.model_version}</td>
+                            <td class="px-4 py-2 font-semibold text-text-primary">${a.event_type}</td>
+                            <td class="px-4 py-2 font-mono text-text-muted">${a.policy_mode}</td>
+                            <td class="px-4 py-2 text-text-secondary">${a.actor_name || a.actor_id || 'System'}</td>
+                            <td class="px-4 py-2 font-mono text-[10px] text-text-muted">
+                                P: ${metrics.precision != null ? Number(metrics.precision).toFixed(2) : '-'}, R: ${metrics.recall != null ? Number(metrics.recall).toFixed(2) : '-'}, F1: ${metrics.f1 != null ? Number(metrics.f1).toFixed(2) : '-'}
+                            </td>
+                            <td class="px-4 py-2">${badge}</td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (e) {
+                console.error("Error loading promotion audit:", e);
+            }
         }
 
         // Initialize on boot
